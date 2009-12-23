@@ -105,6 +105,10 @@ var PBounds = Class.extend({
     return new PBounds(this); 
   },
 
+  isEmpty: function() {
+    return this.width == 0 && this.height ==0;
+  },
+
   add: function(x, y, width, height) {
     width = width ? width : 0;
     height = height ? height : 0;
@@ -143,9 +147,7 @@ var PNode = Class.extend({
     this.fillStyle = null;            
     this.transform = new PTransform();
     this.visible = true;                
-    this.invalidPaint = true;
-    this.invalidBounds = true;
-    this.invalidChildBounds = true;
+    this.invalidPaint = true;    
 
     if (params) {
       if (params.fillStyle)
@@ -156,11 +158,11 @@ var PNode = Class.extend({
   },
   
   paint: function (ctx) {
-    if (this.fillStyle) {
+    if (this.fillStyle && !this.bounds.isEmpty()) {
       ctx.fillStyle = this.fillStyle;
       with (this.bounds) {
         ctx.fillRect(x, y, width, height);
-        }
+      }
     }
   },
   
@@ -183,8 +185,8 @@ var PNode = Class.extend({
     }
   },
   
-  scale: function(scale) {
-    this.transform.scale(scale);
+  scale: function(ratio) {
+    this.transform.scale(ratio);
     return this;
   },
   
@@ -217,7 +219,7 @@ var PNode = Class.extend({
 
   getRoot: function() {
     if (this.parent == null)
-      return this;
+      return null;
 
     return this.parent.getRoot();
   }
@@ -231,7 +233,7 @@ var PRoot = PNode.extend({
     this.scheduler.start();
   },
 
-  root: function() {
+  getRoot: function() {
     return this;
   }
 });
@@ -249,7 +251,7 @@ var PText = PNode.extend({
     }
   },
   
-  paint: function (ctx) {        
+  paint: function (ctx) {
     if (this.fillStyle) {
       ctx.fillStyle = this.fillStyle;
     } else {
@@ -270,20 +272,18 @@ var PImage = PNode.extend({
       this._super(arg);
     }
 
-    this.image = new Image();
-    this.image.loaded = false;
+    this.image = new Image();    
     this.image.onload = function() {
-      this.loaded = true;
+      this.paint = function(ctx) {
+        ctx.drawImage(this.image, 0, 0);
+      }
     }
-
-
+    
     this.image.src = this.url;
   },   
  
   paint: function (ctx) {   
-    if (this.image.loaded) {
-      ctx.drawImage(this.image, 0, 0);
-    }
+    // gets replaced once the image is loaded
   }
 });
 

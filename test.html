@@ -10,9 +10,37 @@
     <script type="text/javascript" src="piccolo2d.js"></script>
 
     <script type="text/javascript">
+      function mock() {
+          var mockMethods = arguments;
+
+          var dummy = {}
+          dummy.calls = [];
+
+          for (var i=0; i< mockMethods.length; i++) {
+            var methodName = mockMethods[i];
+            dummy.calls[methodName] = [];
+            dummy[methodName] = (function(methodName) {
+              return function() {
+                var args = [];
+                for (var i=0; i<arguments.length; i++)
+                  args[i] = arguments[i];
+
+                this.calls[methodName].push(args);
+              }
+            })(methodName);
+          }
+
+          return dummy;
+        }
+
       $(function(){
         testPBounds();
         testPTransform();
+        testPNode();
+        testPRoot();
+        testPText();
+        testPImage();
+        testPLayer();
       });
 
       function testPBounds() {
@@ -132,6 +160,215 @@
           var t = new PTransform();
           t.transformBy(new PTransform().scale(5));
           ok(t.equals([5,0,0,5,0,0]), "transformed");
+        });
+
+        test("lerp interpolates correctly", function() {
+          var t1 = new PTransform().scale(2);
+          var t2 = new PTransform().scale(4).translate(2,4);
+          var t3 = PTransform.lerp(t1, t2, 0.5);
+          ok(t3.equals([3,0,0,3,1,2]));
+        });
+      }
+
+      function testPNode() {
+        module("PNode");
+        
+        test("bounds empty by default", function() {
+          var n = new PNode();
+          same(n.bounds, new PBounds(), "bounds empty");
+        });
+
+        test("children empty array by default", function() {
+          var n = new PNode();
+          ok(n.children instanceof Array, "children array");
+          equal(n.children.length, 0, "no children");
+        });
+
+        test("fillStyle is null by default", function() {
+          var n = new PNode();
+          equal(n.fillStyle, null, "fillStyle");
+        })
+
+        test("not transformed by default", function() {
+          var n = new PNode();
+          ok(n.transform.equals(new PTransform()), "transform is identity");
+        });
+
+        test("paint is invalid by default", function() {
+          var n = new PNode();
+          ok(n.invalidPaint, "invalid");
+        });
+
+        test("fills rect when bounds and fillStyle are good", function() {
+          var n = new PNode({
+            bounds: new PBounds(0, 0, 20, 20),
+            fillStyle: "rgb(255,0,0)"
+          });
+
+          var mockCtx = mock("fillRect");
+          n.paint(mockCtx);
+
+          equal(mockCtx.fillStyle, "rgb(255,0,0)", "fillStyle applied");
+          same(mockCtx.calls.fillRect[0], [0,0,20,20], "rectangle filled");
+        })
+
+        test("fillPaint ignores invisible nodes", function() {
+          var n = new PNode();
+          n.visible = false;
+
+          var mockCtx = mock("save");
+          n.fullPaint(mockCtx);
+
+          equal(mockCtx.calls.save.length, 0, "save never called");
+        });
+
+        test("fillPaint saves and restores context", function() {
+          var n = new PNode();
+
+          var mockCtx = mock("save", "restore", "transform");
+          n.fullPaint(mockCtx);
+
+          equal(mockCtx.calls.save.length, 1, "save called");
+          equal(mockCtx.calls.restore.length, 1, "restore called");
+        });
+
+        test("painting sequence is correct", function() {
+          var calls = [];
+          var n = new PNode();
+          n.paintAfterChildren = function() {
+            calls.push("paintAfterChildren");
+          }
+          n.paint = function() {
+            calls.push("paint");
+          }
+
+          var child = new PNode();
+          child.paint = function() {
+            calls.push("childPaint");
+          }
+
+          n.addChild(child);
+
+          var mockCtx = mock("save", "restore", "transform");
+          n.fullPaint(mockCtx);
+
+          equal(calls[0], "paint");
+          equal(calls[1], "childPaint");
+          equal(calls[2], "paintAfterChildren");
+        });
+
+        test("scaling node scales transform", function() {
+          var n = new PNode();
+          n.scale(5);
+          ok(n.transform.equals([5,0,0,5,0,0]), "correct transform");
+        });
+
+        test("translating node changes transform", function() {
+          var n = new PNode();
+          n.translate(1,2);
+          ok(n.transform.equals([1,0,0,1,1,2]), "correct transform");
+        })
+
+        test("translating node changes transform", function() {
+          var n = new PNode();
+          n.rotate(Math.PI/4);
+          ok(!n.transform.equals([1,0,0,1,0,0]), "transform changed");
+        });
+
+        test("adding child hooks tree up correctly", function() {
+          var n = new PNode();
+          var c = new PNode();
+          n.addChild(c);
+          
+          equal(n.children.length, 1, "child is in children array");
+          equal(n, c.parent, "child has proper parent");
+        });
+
+        test("getting root returns topmost PRoot node", function() {
+          var n = new PRoot();
+          n.scheduler.stop(); //TODO: This feels wrong
+          
+          var n2 = new PNode();
+          var n3 = new PNode();
+          n.addChild(n2);
+          n2.addChild(n3);
+
+          equal(n3.getRoot(), n, "root should be topmost node");
+        });
+
+        test("getting root returns null when no PRoot in node's tree", function() {
+          var n = new PNode();
+          var n2 = new PNode();
+          var n3 = new PNode();
+          n.addChild(n2);
+          n2.addChild(n3);
+
+          equal(n3.getRoot(), null, "root should null when node isn't in a PRoot's tree");
+        });
+      }
+
+      function testPRoot() {
+        module("PRoot");
+
+        test("scheduler is started by default", function() {
+          var root = new PRoot();
+          ok(root.scheduler.intervalID != 0);
+          root.scheduler.stop(); //TODO: this feels wrong
+        });
+
+        test("getRoot returns itself", function() {
+          var root = new PRoot();
+          root.scheduler.stop(); //TODO: this feels wrong
+
+          same(root.getRoot(), root, "returned itself");
+        });
+      }
+
+      function testPText() {
+        module("PText");
+
+        test("Accepts string in constructor", function() {
+          var t = new PText("Hello");
+          equal(t.text, "Hello");
+        });
+
+        test("Accepts options in constructor", function() {
+          var t = new PText({text: "Hello"});
+          equal(t.text, "Hello");
+        });
+
+        test("Passes options to PNode constructor", function() {
+          var t = new PText({text: "Hello", fillStyle: "Red"});
+          equal(t.fillStyle, "Red");
+        });
+
+        test("draws text on graphics context", function() {
+          var t = new PText("Hello");
+          var ctx = mock("fillText");
+          t.paint(ctx);
+          same(ctx.calls.fillText[0], ["Hello", 0, 0]);
+        })
+      }
+
+      function testPImage() {
+        module("PImage");
+      }
+
+      function testPLayer() {
+        module("PLayer");
+
+        test("no cameras by default", function() {
+          var layer = new PLayer();
+          equal(layer.cameras.length, 0, "no cameras");
+        });
+
+        test("Adding a camera does so", function() {
+          var layer = new PLayer();
+          var camera = new PCamera();
+          layer.addCamera(camera);
+
+          equal(layer.cameras.length, 1, "1 cameras");
+          equal(layer.cameras[0], camera, "same camera");
         });
       }
     </script>
