@@ -1,0 +1,43 @@
+<html>
+  <head>
+    <title>Scene Graph Test</title>
+  </head>
+  <body>
+  <canvas id="canvas" width="900" height="600">
+    <p>No Canvas Support in this browser.</p>
+  </canvas>
+  <script type="text/javascript" src="../extends.js"></script>
+  <script type="text/javascript" src="../piccolo2d.js"></script>
+  <script type="text/javascript">
+    // To deal with the case where firebug's console is not available'
+    if (typeof console == "undefined")
+      console = {log: function() {}};
+
+    // Example usage
+    var pCanvas = new PCanvas(document.getElementById('canvas'));
+
+    with ({
+      camera: pCanvas.camera,
+      layer : pCanvas.camera.layers[0],
+      scheduler: pCanvas.camera.getRoot().scheduler
+    }) {
+      camera.addChild(new PText({
+        text: "Sticky Node",
+        fillStyle: "rgb(255,0,0)"
+      }));
+
+      var layerNode = new PText("This Node is not being scaled, its PLayer is.").translate(0, 25);
+
+      layer.addChild(layerNode);
+
+      scheduler.schedule(new PActivity({
+        step: function(ellapsed) {
+          var cos = -Math.cos(ellapsed/800);
+          layer.setTransform(new PTransform().scale(cos*2.5+3.5).translate(200+200*cos, 0));
+          return true;
+        }
+      }));
+    }
+  </script>
+</body>
+</html>

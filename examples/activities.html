@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <title>Activities Example - Piccolo2d.js</title>
+  </head>
+  <body>
+  <canvas id="canvas" width="900" height="600">
+    <p>No Canvas Support in this browser.</p>
+  </canvas>
+  <script type="text/javascript" src="../extends.js"></script>
+  <script type="text/javascript" src="../piccolo2d.js"></script>
+  <script type="text/javascript">
+    // To deal with the case where firebug's console is not available'
+    if (typeof console == "undefined")
+      console = {log: function() {}};
+
+    // Example usage
+    var pCanvas = new PCanvas(document.getElementById('canvas'));
+
+    with ({
+      camera: pCanvas.camera,
+      layer : pCanvas.camera.layers[0],
+      scheduler: pCanvas.camera.getRoot().scheduler
+    }) {            
+      var squareContainer = new PNode({
+        fillStyle: "rgb(200, 200, 200)",
+        bounds: new PBounds(0, 0, 400, 400)
+      })
+      
+      for (var i=0; i<100; i++) {
+        var randomColor = "rgb("+(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) +")";
+        squareContainer.addChild(new PNode({
+          fillStyle: randomColor,
+          bounds: new PBounds(0, 0, 10, 10)
+        }));
+      }
+      layer.addChild(squareContainer);
+
+      var step = 0;
+      scheduler.schedule(new PActivity({
+        init: function() {         
+          this.lastCalled = 0;
+        },
+
+        step: function() {          
+          var currentTime = new Date().getTime();
+          if (currentTime - this.lastCalled > 1500) {
+            for (var i=0; i<squareContainer.children.length; i++) {
+              var x = Math.round(Math.random()* 380) + 10;
+              var y = Math.round(Math.random()* 380) + 10;
+              squareContainer.children[i].animateToTransform(new PTransform().translate(x, y), 1000);
+            }
+            
+            this.lastCalled = currentTime;            
+          }
+          
+          return true;
+        }
+      }));
+  }
+  </script>
+  <h1>Activity Example</h1>
+  <p>This example contains:</p>
+  <ul>
+    <li>100 Rectangles being scheduled every 1.5 seconds for 1 second</li>
+    <li>1 Continuous Animation</h1>
+  </ul>
+</body>
+</html>
