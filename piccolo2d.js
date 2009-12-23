@@ -19,15 +19,16 @@ var PTransform = Class.extend({
     var cos = Math.cos(theta);
     var sin = Math.sin(theta);
   
-    this.multiplyBy([cos, sin, -sin, cos, 0, 0]);
+    this.transformBy([cos, sin, -sin, cos, 0, 0]);
     return this;
   },
   
-  multiplyBy: function(t2) {
+  transformBy: function(t2) {
     var m1 = this.values;
     var m2= t2;
-    if (typeof t2 === "PTransform") {
-      m2 = t2.values;
+    
+    if (t2 instanceof PTransform) {
+      m2 = t2.values;      
     }
     
     this.values = [
@@ -45,6 +46,17 @@ var PTransform = Class.extend({
   applyTo: function (ctx) {
     var m = this.values;
     ctx.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+  },
+
+  equals: function(t) {
+    if (t instanceof PTransform)
+      t = t.values;
+
+    for (var i=0; i<6; i++)
+      if (t[i] != this.values[i])
+        return false;
+
+    return true;
   }
 });
 
@@ -84,12 +96,15 @@ var PBounds = Class.extend({
         throw "Invalid arguments to PBounds Constructor";
     }
   },
+
   equals: function (bounds) {
     return bounds.x == this.x && bounds.y == this.y && bounds.width == this.width && bounds.height == this.height;       
   },
+
   clone: function() {
     return new PBounds(this); 
   },
+
   add: function(x, y, width, height) {
     width = width ? width : 0;
     height = height ? height : 0;
@@ -112,6 +127,8 @@ var PBounds = Class.extend({
     } else {
       this.x = x;
       this.y = y;
+      this.width = width;
+      this.height = height;
     }
 
     this.touched = true;
@@ -310,6 +327,7 @@ var PCamera = PNode.extend({
     this._super(ctx);
 
     ctx.save();
+    
     this.viewTransform.applyTo(ctx);
 
     for (var i=0; i < this.layers.length; i++)

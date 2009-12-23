@@ -11,84 +11,129 @@
 
     <script type="text/javascript">
       $(function(){
+        testPBounds();
+        testPTransform();
+      });
+
+      function testPBounds() {
         module("PBounds");
 
-        test("bounds should be empty by default", function() {
+        test("bounds should be empty by default", function() {          
           var bounds = new PBounds();
-          equals(0, bounds.width);
-          equals(0, bounds.height);
+          equals(0, bounds.width, "width ");
+          equals(0, bounds.height, "height");
+        });
+
+        test("bounds untouched by default", function() {
+          var bounds = new PBounds();
+          ok(!bounds.touched, "bounds not touched");
         });
 
         test("bounds should not equal when x different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(0, 2, 3, 4);
-          ok(!bounds1.equals(bounds2));
+          ok(!bounds1.equals(bounds2), "bounds different");
         })
 
         test("bounds should not equal when y different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(1, 0, 3, 4);
-          ok(!bounds1.equals(bounds2));
+          ok(!bounds1.equals(bounds2), "bounds different");
         })
 
         test("bounds should not equal when width different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(1, 2, 0, 4);
-          ok(!bounds1.equals(bounds2));
+          ok(!bounds1.equals(bounds2), "bounds different");
         })
 
         test("bounds should not equal when height different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(1, 2, 3, 0);
-          ok(!bounds1.equals(bounds2));
+          ok(!bounds1.equals(bounds2), "bounds different");
         })
 
         test("cloning bounds should result equal bounds", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = bounds1.clone();
-          ok(bounds1.equals(bounds2));
+          ok(bounds1.equals(bounds2), "bounds different");
         })
 
         test("cloning bounds returns different object", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = bounds1.clone();
           bounds1.x = 5;
-          ok(!bounds1.equals(bounds2));
+          ok(!bounds1.equals(bounds2), "bounds different");
         })
 
         test("adding point to untouched bounds makes bounds that point", function() {
           var bounds = new PBounds();
           bounds.add(10, 20);
-          ok(bounds.equals(new PBounds(10, 20, 0, 0)));
+          ok(bounds.equals(new PBounds(10, 20, 0, 0)), "bounds became added point");
         });
-        
+
         test("adding point to untouched bounds makes them touched", function() {
           var bounds = new PBounds();
-          ok(!bounds.touched);
+          ok(!bounds.touched, "bounds not touched when new");
           bounds.add(10, 20);
-          ok(bounds.touched);
+          ok(bounds.touched , "bounds touched after point added");
         });
 
         test("adding point to untouched bounds makes bounds that point", function() {
           var bounds = new PBounds();
           bounds.add(10, 20);
-          ok(bounds.equals(new PBounds(10, 20, 0, 0)));
+          ok(bounds.equals(new PBounds(10, 20, 0, 0)), "bounds became added point");
         });
 
         test("adding origin makes bounds as touched", function() {
           var bounds = new PBounds();
           bounds.add(0, 0);
-          ok(bounds.touched);
+          ok(bounds.touched, "bounds touched");
         });
 
         test("adding point to empty touched bounds grows it", function() {
           var bounds = new PBounds();
           bounds.add(0, 0);
           bounds.add(100, 100);
-          ok(bounds.equals(new PBounds(0, 0, 100, 100)));
+          ok(bounds.equals(new PBounds(0, 0, 100, 100)), "bounds stretched to contain point after touched");
+        });
+      }
+
+      function testPTransform() {
+        module("PTransform");
+
+        test("Transform is identy by default", function() {
+          var t = new PTransform();
+          ok(t.equals([1,0,0,1,0,0]), "is identity");
         });
 
-      });
+        test("scale modifies transform correctly", function() {
+          var t = new PTransform().scale(5);
+          ok(t.equals([5,0,0,5,0,0]), "is scale 5 matrix");
+        });
+
+        test("rotate modifies transform correctly", function() {
+          var t = new PTransform().rotate(Math.PI/2);
+          t.values = t.values.map(Math.round);
+          ok(t.equals([0,1,-1,0,0,0]), "is rotate 90 degree matrix");
+        });
+
+        test("translate modifies transform correctly", function() {
+          var t = new PTransform().translate(1,2);
+          ok(t.equals([1,0,0,1,1,2]), "translate translted");
+        });
+
+        test("transformBy is cummulative", function() {
+          var t = new PTransform().scale(2).translate(3,4);
+          ok(t.equals([2,0,0,2,3,4]), "multiple transforms were cummulative");
+        });
+
+        test("transformBy accepts PTransform as argument", function() {
+          var t = new PTransform();
+          t.transformBy(new PTransform().scale(5));
+          ok(t.equals([5,0,0,5,0,0]), "transformed");
+        });
+      }
     </script>
 
   </head>
