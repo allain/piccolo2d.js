@@ -41,6 +41,7 @@
         testPText();
         testPImage();
         testPLayer();
+        testPCanvas();
       });
 
       function testPBounds() {
@@ -369,6 +370,19 @@
 
           equal(layer.cameras.length, 1, "1 cameras");
           equal(layer.cameras[0], camera, "same camera");
+        });
+      }
+
+      function testPCanvas() {
+        module("PCanvas");
+
+        test("scene has proper structure", function() {
+          var canvas = new PCanvas();
+          ok(canvas.camera != null, "camera exists");
+          ok(canvas.camera.parent instanceof PRoot);
+          equal(canvas.camera.layers.length, 1, "1 layer for camera");
+          ok(canvas.camera.layers[0].parent != null, "layer must have parent");
+          ok(canvas.camera.layers[0].getRoot() != null, "Layer's parent is the root");
         });
       }
     </script>

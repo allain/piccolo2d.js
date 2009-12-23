@@ -316,11 +316,8 @@ var PCamera = PNode.extend({
   init: function() {
     this._super();
     this.layers = [];
-    this.addLayer(new PLayer());
-
+   
     this.viewTransform = new PTransform();
-    this.root = new PRoot();
-    this.root.addChild(this);
   },
 
   paint: function(ctx) {
@@ -338,13 +335,10 @@ var PCamera = PNode.extend({
 
   addLayer: function(layer) {
     this.layers.push(layer);
-    layer.parent = this.getRoot();
   },
 
   removeLayer: function(layer) {
     var newLayers = [];
-
-    layer.parent = null;
 
     for (var i=0; i<this.layers.length; i++)
       if (layer != this.layers[i])
@@ -355,10 +349,15 @@ var PCamera = PNode.extend({
 });
 
 var PCanvas = Class.extend({
-  init: function(canvas) {
+  init: function(canvas, root) {
     var _pCanvas = this;
-    this.canvas = canvas;    
+    this.canvas = canvas;
+    this.root =  root || new PRoot();
     this.camera = new PCamera();
+    var layer = new PLayer();
+    this.root.addChild(layer);
+    this.root.addChild(this.camera);
+    this.camera.addLayer(layer);
     this.invalidPaint = true;
     
     
