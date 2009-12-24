@@ -25,13 +25,17 @@
       
       for (var i=0; i<100; i++) {
         var randomColor = "rgb("+(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) +")";
+
         var newChild = new PNode({
           fillStyle: randomColor,
-          bounds: new PBounds(0, 0, 100, 100)
-        }).scale(0.8);
+          bounds: new PBounds(0, 0, 200, 200)
+        }).scale(0.6);
+
         parent.addChild(newChild);
         parent = newChild;
       }
+
+      parent.addChild(new PText("That's all folks"));
       
       var step = 0;
       scheduler.schedule(new PActivity({

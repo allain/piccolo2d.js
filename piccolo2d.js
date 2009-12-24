@@ -1,6 +1,6 @@
 var PTransform = Class.extend({
   init: function(values) {
-    this.values = (values ? values : [1, 0, 0, 1, 0, 0]);
+    this.values = values || [1, 0, 0, 1, 0, 0];
   },
   
   scale: function(ratio) {
@@ -27,9 +27,8 @@ var PTransform = Class.extend({
     var m1 = this.values;
     var m2= t2;
     
-    if (t2 instanceof PTransform) {
+    if (t2 instanceof PTransform)
       m2 = t2.values;      
-    }
     
     this.values = [
     m1[0]*m2[0]+m1[2]*m2[1],
