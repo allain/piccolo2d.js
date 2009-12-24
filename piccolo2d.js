@@ -162,7 +162,7 @@ var PNode = Class.extend({
       ctx.fillStyle = this.fillStyle;
       with (this.bounds) {
         ctx.fillRect(x, y, width, height);
-      }
+        }
     }
   },
   
@@ -230,7 +230,6 @@ var PRoot = PNode.extend({
     this._super(args);
 
     this.scheduler = new PActivityScheduler(50);
-    this.scheduler.start();
   },
 
   getRoot: function() {
@@ -272,18 +271,19 @@ var PImage = PNode.extend({
       this._super(arg);
     }
 
+    this.loaded = false;
+
     this.image = new Image();    
     this.image.onload = function() {
-      this.paint = function(ctx) {
-        ctx.drawImage(this.image, 0, 0);
-      }
+      this.loaded = true;
     }
     
     this.image.src = this.url;
   },   
  
   paint: function (ctx) {   
-    // gets replaced once the image is loaded
+    if (this.loaded)
+      ctx.drawImage(this.image, 0, 0);
   }
 });
 
@@ -350,6 +350,9 @@ var PCamera = PNode.extend({
 
 var PCanvas = Class.extend({
   init: function(canvas, root) {
+    if (!canvas)
+      throw "Canvas is null";
+    
     var _pCanvas = this;
     this.canvas = canvas;
     this.root =  root || new PRoot();
@@ -360,13 +363,7 @@ var PCanvas = Class.extend({
     this.camera.addLayer(layer);
     this.invalidPaint = true;
     
-    
-    var RepaintActivity = PActivity.extend({
-      init: function() {
-        this._super(50);
-        this.infinite = true;
-      },
-      
+    var RepaintActivity = PActivity.extend({      
       step: function() {
         if (_pCanvas.invalidPaint)
           _pCanvas.paint();
@@ -375,16 +372,21 @@ var PCanvas = Class.extend({
       }
     });
     
-    this.camera.getRoot().scheduler.schedule(new RepaintActivity());
+    with (this.camera.getRoot().scheduler) {
+      schedule(new RepaintActivity());
+      start();
+    }
   },
   
   paint: function() {
+    if (!this.canvas)
+      console.log(this.canvas);
     var ctx = this.canvas.getContext('2d');
-    with (ctx) {
-      font="16pt Helvetica";
-      fillStyle="rgb(255,255,255)";      
-      clearRect(0, 0, this.canvas.width, this.canvas.height);
-      }
+    
+    ctx.font="16pt Helvetica";
+    ctx.fillStyle="rgb(255,255,255)";
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
     this.camera.fullPaint(ctx);   
   }
 });
