@@ -56,14 +56,27 @@ var PTransform = Class.extend({
         return false;
 
     return true;
+  },
+
+  transform: function(target) {
+    if (target instanceof PBounds) {
+      var m = this.values;
+      
+      return new PBounds(
+        target.x * m[0] + target.y * m[2] + m[4],
+        target.y * m[1] + target.y * m[3] + m[5],
+        target.width * m[0] + target.height * m[2],
+        target.width * m[1] + target.height * m[3]
+      );
+    }
   }
 });
 
 PTransform.lerp = function (t1, t2, zeroToOne) {
   var dest = [];
-  for (var i=0; i<6 ;i++) {
+  for (var i=0; i<6 ;i++) 
     dest[i] = t1.values[i] + zeroToOne*(t2.values[i]-t1.values[i]);
-  }
+  
   return new PTransform(dest);
 }
 
@@ -135,6 +148,10 @@ var PBounds = Class.extend({
     }
 
     this.touched = true;
+  },
+
+  contains: function(x,y) {
+    return x >= this.x && x < this.x + this.width && y >= this.y && y < this.y + this.width;
   }
 });
 
@@ -151,6 +168,7 @@ var PNode = Class.extend({
     if (params) {
       if (params.fillStyle)
         this.fillStyle = params.fillStyle;
+
       if (params.bounds)
         this.bounds = params.bounds;
     }
@@ -174,9 +192,10 @@ var PNode = Class.extend({
       this.transform.applyTo(ctx);
       
       this.paint(ctx);     
-              
-      for (var i=0; i<this.children.length; i++)        
+
+      for (var i=0; i<this.children.length; i++) {
         this.children[i].fullPaint(ctx);
+      }
       
       this.paintAfterChildren(ctx);
 
@@ -221,6 +240,21 @@ var PNode = Class.extend({
       return null;
 
     return this.parent.getRoot();
+  },
+
+  getFullBounds: function() {
+    var fullBounds = this.bounds.clone();
+    
+    for (var i=0; i<this.children.length; i++) {
+      var child = this.children[i];
+      var childFullBounds = child.getFullBounds();
+      var tBounds = child.transform.transform(childFullBounds);
+      with (tBounds) {
+        fullBounds.add(x, y, width, height);
+      }
+    }
+
+    return fullBounds;
   }
 });
 
@@ -294,7 +328,8 @@ var PLayer = PNode.extend({
   },
 
   addCamera: function(camera) {
-    this.cameras.push(camera);
+    if (this.cameras.indexOf(camera) == -1)
+      this.cameras.push(camera);
   },
 
   removeCamera: function(camera) {
@@ -302,9 +337,10 @@ var PLayer = PNode.extend({
 
     camera.removeLayer(this);
 
-    for (var i=0; i<this.cameras.length; i++)
-      if (camera != this.cameras[i])
-        newCameras.push(this.cameras[i]);
+    this.cameras.forEach(function(c) {
+      if (c != camera)
+        newCameras.push(c);
+    })
 
 
     this.cameras = newCameras;
@@ -326,36 +362,42 @@ var PCamera = PNode.extend({
     
     this.viewTransform.applyTo(ctx);
 
-    for (var i=0; i < this.layers.length; i++)
+    for (var i=0; i<this.layers.length; i++)
       this.layers[i].fullPaint(ctx);
 
     ctx.restore();
   },
 
   addLayer: function(layer) {
-    this.layers.push(layer);
+    // bail if layer already added
+    if (this.layers.indexOf(layer) == -1) {
+      this.layers.push(layer);
+      layer.addCamera(this);
+    }
   },
 
   removeLayer: function(layer) {
     var newLayers = [];
 
-    for (var i=0; i<this.layers.length; i++)
-      if (layer != this.layers[i])
-        newLayers.push(this.layers[i]);
+    this.layers.forEach(function (l) {
+      if (l != layer)
+        newLayers.push(l);
+    })
 
     this.layers = newLayers;
-  }
+  },
 });
 
 var PCanvas = Class.extend({
   init: function(canvas, root) {
     if (!canvas)
-      throw "Canvas is null";
+      throw "Canvas provided to Piccolo is invalid!";
     
     var _pCanvas = this;
     this.canvas = canvas;
     this.root =  root || new PRoot();
     this.camera = new PCamera();
+    this.camera.bounds = new PBounds(0, 0, canvas.width, canvas.height);
     var layer = new PLayer();
     this.root.addChild(layer);
     this.root.addChild(this.camera);

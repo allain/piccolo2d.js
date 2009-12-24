@@ -6,6 +6,7 @@
     <script type="text/javascript" src="lib/jquery-1.3.2.min.js"></script>
     <link rel="stylesheet" href="lib/qunit.css" type="text/css" media="screen" />
     <script type="text/javascript" src="lib/qunit.js"></script>
+    <script type="text/javascript" src="lib/javascript-1.6.js"></script>
     <script type="text/javascript" src="extends.js"></script>
     <script type="text/javascript" src="piccolo2d.js"></script>
 
@@ -40,8 +41,10 @@
         testPRoot();
         testPText();
         testPImage();
-        testPLayer();
+        testPLayer();        
+        testPCamera();
         testPCanvas();
+
       });
 
       function testPBounds() {
@@ -168,6 +171,16 @@
           var t2 = new PTransform().scale(4).translate(2,4);
           var t3 = PTransform.lerp(t1, t2, 0.5);
           ok(t3.equals([3,0,0,3,1,2]));
+        });
+
+        test("transforming PBounds works as expected", function() {
+          var bounds = new PBounds(1, 2, 3, 4);
+          var t1 = new PTransform().scale(2).translate(5, 5);
+          var tBounds = t1.transform(bounds);
+          equal(7, tBounds.x);
+          equal(9, tBounds.y);
+          equal(6, tBounds.width);
+          equal(8, tBounds.height);
         });
       }
 
@@ -306,6 +319,28 @@
 
           equal(n3.getRoot(), null, "root should null when node isn't in a PRoot's tree");
         });
+
+        test("get full bounds returns empty when empty node and no children", function() {
+          var n = new PNode();
+          ok(n.getFullBounds().isEmpty(), "bounds empty");
+        });
+
+        test("get full bounds returns node's bounds when no children", function() {
+          var n = new PNode({bounds: new PBounds(0,0, 20, 20)});
+          ok(n.getFullBounds().equals(n.bounds), "bounds same as parent when no children");
+        });
+
+        test("get full bounds contains children even when way outside", function() {
+          var n = new PNode({bounds: new PBounds(0,0, 10, 10)});
+          var child = new PNode({bounds: new PBounds(0, 0, 10, 10)}).translate(90, 90);
+          n.addChild(child);
+
+          var fullBounds = n.getFullBounds();
+          equal(fullBounds.x, 0);
+          equal(fullBounds.y, 0);
+          equal(fullBounds.width, 100);
+          equal(fullBounds.height, 100);
+        });
       }
 
       function testPRoot() {
@@ -371,13 +406,59 @@
           equal(layer.cameras.length, 1, "1 cameras");
           equal(layer.cameras[0], camera, "same camera");
         });
+
+        test("Adding same camera multiple times is ignored", function() {
+          var layer = new PLayer();
+          var camera = new PCamera();
+          layer.addCamera(camera);
+          layer.addCamera(camera);
+          equal(layer.cameras.length, 1, "1 camera");
+        });
       }
+
+      function testPCamera() {
+        module("PCamera");
+
+        test("Camera has no layers attached by default", function() {
+          var camera = new PCamera();
+          equal(camera.layers.length, 0, "no layers");
+        });
+
+        test("Adding a layer twice ignores second addition", function() {
+          var camera = new PCamera();
+          var layer = new PLayer();
+          camera.addLayer(layer);
+          camera.addLayer(layer);
+           equal(camera.layers.length, 1, "does not allow adding a layer multiple times");
+        });
+
+        test("Adding layer wires it to this camera", function() {
+          var camera = new PCamera();
+          var layer = new PLayer();
+          camera.addLayer(layer);
+          equal(layer.cameras.length, 1, "layer has 1 registered camera");
+        });
+
+        test("Camera bounds should match canvas's", function() {
+          var canvas = document.getElementById("testCanvas");
+          var pCanvas = new PCanvas(canvas);
+          pCanvas.camera.getRoot().scheduler.stop(); // Wow, I hate this
+
+          var cameraBounds = pCanvas.camera.bounds;
+          equal(cameraBounds.x, 0);
+          equal(cameraBounds.y, 0);
+          equal(cameraBounds.width, canvas.width);
+          equal(cameraBounds.height, canvas.height);
+        })
+      }
+
 
       function testPCanvas() {
         module("PCanvas");
 
         test("scene has proper structure", function() {
-          var canvas = new PCanvas();
+          var canvas = new PCanvas(document.getElementById("testCanvas"));
+          canvas.camera.getRoot().scheduler.stop();
           ok(canvas.camera != null, "camera exists");
           ok(canvas.camera.parent instanceof PRoot);
           equal(canvas.camera.layers.length, 1, "1 layer for camera");
@@ -385,10 +466,13 @@
           ok(canvas.camera.layers[0].getRoot() != null, "Layer's parent is the root");
         });
       }
+
+
     </script>
 
   </head>
   <body>
+    <canvas id="testCanvas" style="display:none" width="100" height="100"></canvas>
     <h1 id="qunit-header">Piccolo2d.jd Unit Tests</h1>
     <h2 id="qunit-banner"></h2>
     <h2 id="qunit-userAgent"></h2>

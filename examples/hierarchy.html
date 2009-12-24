@@ -39,14 +39,17 @@
       
       var step = 0;
       scheduler.schedule(new PActivity({
-        step: function(ellapsedMillis) {
+        step: function() {
           layer.scale(1.05);
           return true;
         }
       }));
     }
   </script>
-  <h1>Activity Example</h1>
+  <h1>Hierarchy Example</h1>
   <p>This example contains:</p>
+  <ul>
+    <li>100 200x200 squares nested as a chain of 100 squares, each child is 60% the size of its parent.</li>
+  </ul>
 </body>
 </html>
