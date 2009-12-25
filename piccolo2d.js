@@ -35,8 +35,8 @@ var PTransform = Class.extend({
     m1[1]*m2[0]+m1[3]*m2[1],
     m1[0]*m2[2]+m1[2]*m2[3],
     m1[1]*m2[2]+m1[3]*m2[3],
-    m1[0]*m2[4]+m1[2]*m2[5] + m1[4],
-    m1[1]*m2[4]+m1[3]*m2[5] + m1[5],
+    m1[0]*m2[4]+m1[2]*m2[5]+m1[4],
+    m1[1]*m2[4]+m1[3]*m2[5]+m1[5],
     ];    
     
     return this;
@@ -59,16 +59,34 @@ var PTransform = Class.extend({
   },
 
   transform: function(target) {
-    if (target instanceof PBounds) {
-      var m = this.values;
-      
+    var m = this.values;
+    if (target instanceof PPoint) {
+      return new PPoint(target.x * m[0] + target.y * m[2] + m[4], target.x * m[1] + target.y * m[3] + m[5]);
+    } else if (target instanceof PBounds) {
+      var tPos = this.transform(new PPoint(target.x, target.y));
+      var tBottomRight = this.transform(new PPoint(target.x + target.width, target.y + target.height));
       return new PBounds(
-        target.x * m[0] + target.y * m[2] + m[4],
-        target.y * m[1] + target.y * m[3] + m[5],
-        target.width * m[0] + target.height * m[2],
-        target.width * m[1] + target.height * m[3]
-      );
+        Math.min(tPos.x, tBottomRight.x),
+        Math.min(tPos.y, tBottomRight.y),
+        Math.abs(tPos.x-tBottomRight.x),
+        Math.abs(tPos.y-tBottomRight.y)
+        );
+    } else if (target instanceof PTransform) {
+      var transform = new PTransform(this.values);
+      transform.transformBy(target);
+      return transform;
     }
+
+    throw "Invalid argument to transform metho"
+  },
+  getInverse: function() {
+    var m = this.values;
+
+    var det = m[0]*m[3]-m[1]*m[2];
+    return new PTransform([
+      m[3]/det, -m[1]/det,
+      -m[2]/det, m[0]/det,
+      (m[2]*m[5]-m[3]*m[4])/det, -(m[0]*m[5]-m[1]*m[4])/det]);
   }
 });
 
@@ -79,6 +97,31 @@ PTransform.lerp = function (t1, t2, zeroToOne) {
   
   return new PTransform(dest);
 }
+
+var PPoint = Class.extend({
+  init: function() {
+    if (arguments.length == 0) {
+      this.x = 0;
+      this.y = 0;
+    } else if (arguments.length == 1 && arguments[0] instanceof PPoint) {
+      this.x = arguments[0].x;
+      this.y = arguments[0].y;
+    } else if (arguments.length == 2) {
+      this.x = arguments[0];
+      this.y = arguments[1];
+    }
+  },
+
+  distanceFrom: function() {
+    if (arguments.length == 1 && arguments[0] instanceof PPoint) {
+      var p = arguments[0];
+      return Math.sqrt(Math.pow(p.x-this.x, 2) + Math.pow(p.y-this.y, 2));
+    } else if (arguments.length == 2) {
+      return Math.sqrt(Math.pow(arguments[0]-this.x, 2) + Math.pow(arguments[1]-this.y, 2));
+    }
+    throw "Invalid arguments to distanceFrom";
+  }
+});
 
 var PBounds = Class.extend({
   init: function() {
@@ -251,10 +294,29 @@ var PNode = Class.extend({
       var tBounds = child.transform.transform(childFullBounds);
       with (tBounds) {
         fullBounds.add(x, y, width, height);
-      }
+        }
     }
 
     return fullBounds;
+  },
+
+  getGlobalFullBounds: function() {
+    var fullBounds = this.getFullBounds();
+    var currentNode = this;
+    while (currentNode.parent) {
+      fullBounds =this.transform.transform(fullBounds);
+      currentNode = currentNode.parent;
+    }
+
+    return fullBounds;
+  },
+
+  localToParent: function(target) {
+    return this.transform.transform(target);
+  },
+
+  parentToLocal: function(target) {
+    return this.transform.getInverse().transform(target);
   }
 });
 
@@ -416,7 +478,7 @@ var PCanvas = Class.extend({
     with (this.camera.getRoot().scheduler) {
       schedule(new RepaintActivity());
       start();
-    }
+      }
   },
   
   paint: function() {

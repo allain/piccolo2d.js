@@ -12,30 +12,31 @@
 
     <script type="text/javascript">
       function mock() {
-          var mockMethods = arguments;
+        var mockMethods = arguments;
 
-          var dummy = {}
-          dummy.calls = [];
+        var dummy = {}
+        dummy.calls = [];
 
-          for (var i=0; i< mockMethods.length; i++) {
-            var methodName = mockMethods[i];
-            dummy.calls[methodName] = [];
-            dummy[methodName] = (function(methodName) {
-              return function() {
-                var args = [];
-                for (var i=0; i<arguments.length; i++)
-                  args[i] = arguments[i];
+        for (var i=0; i< mockMethods.length; i++) {
+          var methodName = mockMethods[i];
+          dummy.calls[methodName] = [];
+          dummy[methodName] = (function(methodName) {
+            return function() {
+              var args = [];
+              for (var i=0; i<arguments.length; i++)
+                args[i] = arguments[i];
 
-                this.calls[methodName].push(args);
-              }
-            })(methodName);
-          }
-
-          return dummy;
+              this.calls[methodName].push(args);
+            }
+          })(methodName);
         }
+
+        return dummy;
+      }
 
       $(function(){
         testPBounds();
+        testPPoint();
         testPTransform();
         testPNode();
         testPRoot();
@@ -44,7 +45,6 @@
         testPLayer();        
         testPCamera();
         testPCanvas();
-
       });
 
       function testPBounds() {
@@ -181,6 +181,99 @@
           equal(9, tBounds.y);
           equal(6, tBounds.width);
           equal(8, tBounds.height);
+        });
+
+        test("transforming PBounds by rotating can affect size", function() {
+          var bounds = new PBounds(0, 0, 20, 30);
+          var t = new PTransform().rotate(Math.PI/8);
+          var bounds2 = t.transform(bounds);
+
+          ok(Math.abs(bounds2.width-20) != 0.001, bounds2.width);
+          ok(Math.abs(bounds2.height-30) != 0.001, bounds2.height);
+        });
+
+        test("transforming PBounds by translating does not affect size", function() {
+          var bounds = new PBounds(0, 0, 20, 30);
+          var t = new PTransform().translate(5,5);
+          var bounds2 = t.transform(bounds);
+
+          ok(Math.abs(bounds2.width-20) < 0.001, bounds2.width);
+          ok(Math.abs(bounds2.height-30) < 0.001, bounds2.height);
+        });
+
+        test("transforming PBounds handles case when rotated too much", function() {
+          var bounds = new PBounds(0, 0, 20, 20);
+          var t = new PTransform().rotate(Math.PI);
+          var bounds2 = t.transform(bounds);
+          equal(Math.round(bounds2.x), -20);
+          equal(Math.round(bounds2.y), -20);
+          equal(Math.round(bounds2.width), 20);
+          equal(Math.round(bounds2.height), 20);
+        })
+
+        test("Inverse Transform for scale is correct", function() {
+          var t = new PTransform().scale(2);
+          var i = t.getInverse();
+          ok(i.equals([1/2, 0, 0, 1/2, 0, 0]));
+        });
+
+        test("Inverse Transform for translate is correct", function() {
+          var t = new PTransform().translate(1,2);
+          var i = t.getInverse();
+          same(i.values, [1, 0, 0, 1, -1, -2]);
+        });
+
+        test("Inverse Transform for rotate is correct", function() {
+          var t = new PTransform().rotate(Math.PI);
+          var i = t.getInverse();
+          same(i.values.map(Math.round), [-1, 0, 0, -1, 0, 0]);
+        });
+
+        test("Cummulative Transform can be reversed correctly", function() {
+          var t = new PTransform().scale(5).translate(2,3).rotate(Math.PI/5);
+          var inv = t.getInverse();
+          t.transformBy(inv);
+
+          same(t.values.map(Math.round), [1, 0, 0, 1, 0, 0]);
+        })
+      }
+
+      function testPPoint() {
+        module("PPoint");
+
+        test("Point is origin by default", function() {
+          var p = new PPoint();
+          equal(p.x, 0, "x is zero");
+          equal(p.y, 0, "y is zero");
+        });
+
+        test("constructor accepts x,y", function() {
+          var p = new PPoint(1,2);
+          equal(p.x, 1, "x is 1");
+          equal(p.y, 2, "y is 2");
+        });
+
+        test("constructor accepts point", function() {
+          var p = new PPoint(new PPoint(1,2));
+          equal(p.x, 1, "x is 1");
+          equal(p.y, 2, "y is 2");
+        });
+
+        test("distanceFrom returns 0 when same point", function() {
+          var p = new PPoint(1,2);
+          equal(p.distanceFrom(p), 0);
+        });
+
+        test("distanceFrom returns correct distance when points horizontal", function() {
+          var p1 = new PPoint(-2, 0);
+          var p2 = new PPoint(2, 0);
+          equal(p1.distanceFrom(p2), 4);
+        });
+
+        test("distanceFrom returns correct distance when points vertical", function() {
+          var p1 = new PPoint(0, -2);
+          var p2 = new PPoint(0, 2);
+          equal(p1.distanceFrom(p2), 4);
         });
       }
 
@@ -341,6 +434,25 @@
           equal(fullBounds.width, 100);
           equal(fullBounds.height, 100);
         });
+
+        test("global full bounds is full bounds when no parent", function() {
+          var n = new PNode({
+            bounds: new PBounds(0, 0, 20, 20)
+          });
+
+          same(n.getGlobalFullBounds(), n.getFullBounds());
+        });
+
+        test("global full bounds is correct", function() {
+          var node1= new PNode();
+          var node2 = new PNode({
+            bounds: new PBounds(0, 0, 20, 20)
+          });
+          node1.addChild(node2);
+          node2.scale(0.5);
+
+          same(node2.getGlobalFullBounds(), new PBounds(0, 0, 10, 10));
+        });
       }
 
       function testPRoot() {
@@ -429,7 +541,7 @@
           var layer = new PLayer();
           camera.addLayer(layer);
           camera.addLayer(layer);
-           equal(camera.layers.length, 1, "does not allow adding a layer multiple times");
+          equal(camera.layers.length, 1, "does not allow adding a layer multiple times");
         });
 
         test("Adding layer wires it to this camera", function() {
@@ -472,10 +584,10 @@
 
   </head>
   <body>
-    <canvas id="testCanvas" style="display:none" width="100" height="100"></canvas>
-    <h1 id="qunit-header">Piccolo2d.jd Unit Tests</h1>
-    <h2 id="qunit-banner"></h2>
-    <h2 id="qunit-userAgent"></h2>
-    <ol id="qunit-tests"></ol>
-  </body>
+  <canvas id="testCanvas" style="display:none" width="100" height="100"></canvas>
+  <h1 id="qunit-header">Piccolo2d.jd Unit Tests</h1>
+  <h2 id="qunit-banner"></h2>
+  <h2 id="qunit-userAgent"></h2>
+  <ol id="qunit-tests"></ol>
+</body>
 </html>
