@@ -362,7 +362,7 @@
           equal(calls[0], "paint");
           equal(calls[1], "childPaint");
           equal(calls[2], "paintAfterChildren");
-        });
+        });camera.
 
         test("scaling node scales transform", function() {
           var n = new PNode();
@@ -393,8 +393,6 @@
 
         test("getting root returns topmost PRoot node", function() {
           var n = new PRoot();
-          n.scheduler.stop(); //TODO: This feels wrong
-          
           var n2 = new PNode();
           var n3 = new PNode();
           n.addChild(n2);
@@ -458,16 +456,14 @@
       function testPRoot() {
         module("PRoot");
 
-        test("scheduler is started by default", function() {
+        test("scheduler is not started by default", function() {
           var root = new PRoot();
-          ok(root.scheduler.intervalID != 0);
-          root.scheduler.stop(); //TODO: this feels wrong
+          ok(!root.scheduler.intervalID, "schedule thread not started");
         });
 
         test("getRoot returns itself", function() {
           var root = new PRoot();
-          root.scheduler.stop(); //TODO: this feels wrong
-
+         
           same(root.getRoot(), root, "returned itself");
         });
       }
@@ -554,8 +550,7 @@
         test("Camera bounds should match canvas's", function() {
           var canvas = document.getElementById("testCanvas");
           var pCanvas = new PCanvas(canvas);
-          pCanvas.camera.getRoot().scheduler.stop(); // Wow, I hate this
-
+         
           var cameraBounds = pCanvas.camera.bounds;
           equal(cameraBounds.x, 0);
           equal(cameraBounds.y, 0);
@@ -570,13 +565,36 @@
 
         test("scene has proper structure", function() {
           var canvas = new PCanvas(document.getElementById("testCanvas"));
-          canvas.camera.getRoot().scheduler.stop();
           ok(canvas.camera != null, "camera exists");
           ok(canvas.camera.parent instanceof PRoot);
           equal(canvas.camera.layers.length, 1, "1 layer for camera");
           ok(canvas.camera.layers[0].parent != null, "layer must have parent");
           ok(canvas.camera.layers[0].getRoot() != null, "Layer's parent is the root");
         });
+
+        test("get picked nodes returns PLayer", function() {
+          var canvas = new PCanvas(document.getElementById("testCanvas"));
+          
+          var pickedNodes = canvas.getPickedNodes(0, 0);
+          ok(pickedNodes != null, "pickedNodes cannot be null");
+          equal(pickedNodes.length, 1);
+          ok(pickedNodes[0] instanceof PLayer, "picked node is PLayer");
+        });
+
+        test("getPickedNodes takes rotation into account", function() {
+          var canvas = new PCanvas(document.getElementById("testCanvas"));
+          var node = new PNode({bounds: new PBounds(0, 0, 20, 20)});
+          node.rotate(Math.PI);
+          canvas.camera.layers[0].addChild(node);
+          var nodes = canvas.getPickedNodes(10, 10);
+          ok(nodes[0] instanceof PLayer, "node should have been rotated away");
+          var nodes = canvas.getPickedNodes(-10, -10);
+          equal(nodes[0].length, 1);
+          ok(nodes[0] == node, "returned node should be correct one");
+          console.log(nodes[0]);
+          console.log(node);
+
+        })
       }
 
 

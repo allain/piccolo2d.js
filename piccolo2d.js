@@ -1,3 +1,9 @@
+Array.prototype.pushAll = function(x) {
+  for (var i=0; i<x.length; i++) {
+    this.push(x[i]);
+  }
+}
+
 var PTransform = Class.extend({
   init: function(values) {
     this.values = values || [1, 0, 0, 1, 0, 0];
@@ -193,8 +199,8 @@ var PBounds = Class.extend({
     this.touched = true;
   },
 
-  contains: function(x,y) {
-    return x >= this.x && x < this.x + this.width && y >= this.y && y < this.y + this.width;
+  contains: function(p) {
+    return p.x >= this.x && p.x < this.x + this.width && p.y >= this.y && p.y < this.y + this.width;
   }
 });
 
@@ -448,6 +454,35 @@ var PCamera = PNode.extend({
 
     this.layers = newLayers;
   },
+  
+  getPickedNodes: function(x, y) {
+    var viewInverse = this.viewTransform.getInverse();
+    var globalPoint = viewInverse.transform(new PPoint(x,y));
+
+    var pickedNodes = [];
+    for (var i=0; i<this.layers.length; i++) {
+      pickedNodes.pushAll(this._getPickedNodes(this.layers[i], globalPoint));
+    }
+
+    return pickedNodes;
+  },
+  
+  _getPickedNodes: function (parent, parentPoint) {
+    var pickedChildren = [];
+    for (var i=0; i < parent.children.length; i++) {
+      var childBounds = parent.children[i].getFullBounds();
+      var childPoint = parent.children[i].transform.transform(parentPoint);
+      if (childBounds.contains(childPoint)) {
+        var picked = this._getPickedNodes(parent.children[i], childPoint);
+        pickedChildren.pushAll(picked);
+      }
+    }
+    if (pickedChildren.length == 0) {
+      pickedChildren.push(parent);
+    }
+    return pickedChildren;
+  }
+
 });
 
 var PCanvas = Class.extend({
@@ -477,8 +512,7 @@ var PCanvas = Class.extend({
     
     with (this.camera.getRoot().scheduler) {
       schedule(new RepaintActivity());
-      start();
-      }
+    }
   },
   
   paint: function() {
@@ -491,6 +525,10 @@ var PCanvas = Class.extend({
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     this.camera.fullPaint(ctx);   
+  },
+
+  getPickedNodes: function(x, y) {
+    return this.camera.getPickedNodes(x, y);
   }
 });
 
@@ -535,6 +573,8 @@ var PActivityScheduler = Class.extend({
       activity: activity,
       startTime: startTime      
     });
+
+    this._start();
   },
   
   step: function() {
@@ -560,14 +600,17 @@ var PActivityScheduler = Class.extend({
           } else {            
             finished();
           }
-          }
-      }     
+        }
+      }
     }
     
     this.activities = keepers;
+    if (!this.activities) {
+      this._stop();
+    }
   },
   
-  start: function() {
+  _start: function() {
     var _this = this;
     
     if (!this.intervalID) {
@@ -594,7 +637,7 @@ var PActivityScheduler = Class.extend({
     }
   },
   
-  stop: function() {
+  _stop: function() {
     if (this.intervalID) {
       clearInterval(this.intervalID);
       this.intervalID = null;
