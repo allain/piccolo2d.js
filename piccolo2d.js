@@ -4,6 +4,16 @@ Array.prototype.pushAll = function(x) {
   }
 }
 
+Array.prototype.remove = function(x) {
+  var keepers = [];
+
+  for (var i=0; i<this.length; i++)
+    if (this[i] != x)
+      keepers.push(this[i]);
+  
+  return keepers;
+}
+
 var PTransform = Class.extend({
   init: function(values) {
     this.values = values || [1, 0, 0, 1, 0, 0];
@@ -208,6 +218,7 @@ var PNode = Class.extend({
   init: function(params) {
     this.parent = null;
     this.children = [];
+    this.listeners = [];
     this.bounds = new PBounds();      
     this.fillStyle = null;            
     this.transform = new PTransform();
@@ -271,7 +282,12 @@ var PNode = Class.extend({
     this.children.push(child);
     child.parent = this;
   },
-  
+
+  removeChild: function(child) {
+    child.parent = null;
+    this.children = this.children.remove(child);
+  },
+
   setTransform: function(transform) {
     this.transform = transform; 
   },
@@ -333,6 +349,11 @@ var PNode = Class.extend({
 
   parentToLocal: function(target) {
     return this.transform.getInverse().transform(target);
+  },
+
+  addListener: function (listener) {
+    if (this.listeners.indexOf(listener) == -1)
+      this.listeners.push(listener);
   }
 });
 
@@ -368,7 +389,7 @@ var PText = PNode.extend({
       ctx.fillStyle="rgb(0,0,0)";
     }
     ctx.textBaseline = "top";
-    ctx.fillText(this.text, 0, 0); 
+    ctx.fillText(this.text, this.bounds.x, this.bounds.y);
   }
 });
 
@@ -411,17 +432,9 @@ var PLayer = PNode.extend({
   },
 
   removeCamera: function(camera) {
-    var newCameras = [];
-
     camera.removeLayer(this);
 
-    this.cameras.forEach(function(c) {
-      if (c != camera)
-        newCameras.push(c);
-    })
-
-
-    this.cameras = newCameras;
+    this.cameras = this.cameras.remove(camera);
   }
 });
 
@@ -455,14 +468,7 @@ var PCamera = PNode.extend({
   },
 
   removeLayer: function(layer) {
-    var newLayers = [];
-
-    this.layers.forEach(function (l) {
-      if (l != layer)
-        newLayers.push(l);
-    })
-
-    this.layers = newLayers;
+    this.layers = this.layers.remove(layer);
   },
   
   getPickedNodes: function(x, y) {
@@ -497,6 +503,9 @@ var PCamera = PNode.extend({
 
 var PCanvas = Class.extend({
   init: function(canvas, root) {
+    if (typeof canvas == "string")
+      canvas = document.getElementById(canvas);
+
     if (!canvas)
       throw "Canvas provided to Piccolo is invalid!";
     
@@ -523,6 +532,30 @@ var PCanvas = Class.extend({
     with (this.camera.getRoot().scheduler) {
       schedule(new RepaintActivity());
     }
+    
+    function processEvent(type, event, pickedNodes) {
+      var currentNode = pickedNodes[0];
+      while (currentNode) {
+        for (var i=0; i<currentNode.listeners.length; i++) {
+          var listener = currentNode.listeners[i];
+          if (listener[type]) {
+            listener[type]({"event": event, "pickedNodes": pickedNodes});
+          }
+        }
+        currentNode = currentNode.parent;
+      }
+    }
+
+    //TODO: Remove need for jQuery here
+    $(canvas).click(function(event) {
+      var offset = $(canvas).offset();
+      var x = event.clientX - offset.left;
+      var y = event.clientY - offset.top;
+      
+      processEvent("click", event, _pCanvas.getPickedNodes(x, y));
+
+    })
+    
   },
   
   paint: function() {

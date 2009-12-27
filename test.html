@@ -466,7 +466,27 @@
           equal(0, fb.y);
           ok (Math.abs(fb.width-20) < 0.01);
           ok (Math.abs(fb.height-20) < 0.01);
-        })
+        });
+
+        test("Node listeners is empty by default", function() {
+          var n = new PNode();
+          same(n.listeners, []);
+        });
+
+        test("Node add listener adds it", function() {
+          var n = new PNode();
+          var l = {};
+          n.addListener(l);
+          same(n.listeners, [l]);
+        });
+
+        test("Adding a listener twice adds it once", function() {
+          var n = new PNode();
+          var l = {};
+          n.addListener(l);
+          n.addListener(l);
+          equal(n.listeners.length, 1);
+        });
       }
 
       function testPRoot() {
@@ -613,10 +633,15 @@
 
         test("getPickedNodes returns node even when rotated", function() {
           var canvas = buildSceneForPickNodeRotateTest();
-
           var nodes = canvas.getPickedNodes(-10, -10);
+          
           equal(nodes.length, 1);
           ok(nodes[0] == canvas.camera.layers[0].children[0], "returned node should be correct one");
+        });
+
+        test("PCanvas accepts id of canvas", function() {
+          var canvas = new PCanvas("testCanvas");
+          ok(canvas.canvas instanceof Object, typeof canvas.canvas);
         });
       }
 
