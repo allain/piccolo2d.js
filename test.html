@@ -362,7 +362,7 @@
           equal(calls[0], "paint");
           equal(calls[1], "childPaint");
           equal(calls[2], "paintAfterChildren");
-        });camera.
+        });
 
         test("scaling node scales transform", function() {
           var n = new PNode();
@@ -441,7 +441,7 @@
           same(n.getGlobalFullBounds(), n.getFullBounds());
         });
 
-        test("global full bounds is correct", function() {
+        test("global full bounds is correct for simple case", function() {
           var node1= new PNode();
           var node2 = new PNode({
             bounds: new PBounds(0, 0, 20, 20)
@@ -451,6 +451,22 @@
 
           same(node2.getGlobalFullBounds(), new PBounds(0, 0, 10, 10));
         });
+
+        test("global full bounds is correct when cummulative rotation is identity", function() {
+          var node1 = new PNode();
+          var node2 = new PNode();
+          var node3 = new PNode({bounds: new PBounds(0, 0, 20, 20)});
+          node1.addChild(node2);
+          node2.addChild(node3);
+          node2.rotate(Math.PI/4);
+          node3.rotate(-Math.PI/4);
+
+          var fb = node3.getGlobalFullBounds();
+          equal(0, fb.x);
+          equal(0, fb.y);
+          ok (Math.abs(fb.width-20) < 0.01);
+          ok (Math.abs(fb.height-20) < 0.01);
+        })
       }
 
       function testPRoot() {
@@ -581,20 +597,27 @@
           ok(pickedNodes[0] instanceof PLayer, "picked node is PLayer");
         });
 
-        test("getPickedNodes takes rotation into account", function() {
+        function buildSceneForPickNodeRotateTest() {
           var canvas = new PCanvas(document.getElementById("testCanvas"));
           var node = new PNode({bounds: new PBounds(0, 0, 20, 20)});
           node.rotate(Math.PI);
           canvas.camera.layers[0].addChild(node);
+          return canvas;
+        }
+        test("getPickedNodes returns PLayer when nodes rotated away from test point", function() {
+          var canvas = buildSceneForPickNodeRotateTest();
           var nodes = canvas.getPickedNodes(10, 10);
+          equal(nodes.length, 1);
           ok(nodes[0] instanceof PLayer, "node should have been rotated away");
-          var nodes = canvas.getPickedNodes(-10, -10);
-          equal(nodes[0].length, 1);
-          ok(nodes[0] == node, "returned node should be correct one");
-          console.log(nodes[0]);
-          console.log(node);
+        });
 
-        })
+        test("getPickedNodes returns node even when rotated", function() {
+          var canvas = buildSceneForPickNodeRotateTest();
+
+          var nodes = canvas.getPickedNodes(-10, -10);
+          equal(nodes.length, 1);
+          ok(nodes[0] == canvas.camera.layers[0].children[0], "returned node should be correct one");
+        });
       }
 
 

@@ -300,7 +300,7 @@ var PNode = Class.extend({
       var tBounds = child.transform.transform(childFullBounds);
       with (tBounds) {
         fullBounds.add(x, y, width, height);
-        }
+      }
     }
 
     return fullBounds;
@@ -309,12 +309,22 @@ var PNode = Class.extend({
   getGlobalFullBounds: function() {
     var fullBounds = this.getFullBounds();
     var currentNode = this;
+
+    var tl = new PPoint(fullBounds.x, fullBounds.y);
+    var br = new PPoint(fullBounds.x + fullBounds.width, fullBounds.y + fullBounds.height);
+
     while (currentNode.parent) {
-      fullBounds =this.transform.transform(fullBounds);
+      tl = currentNode.transform.transform(tl);
+      br = currentNode.transform.transform(br);
       currentNode = currentNode.parent;
     }
 
-    return fullBounds;
+    return new PBounds(
+      Math.min(tl.x, br.x),
+      Math.min(tl.y, br.y),
+      Math.abs(tl.x - br.x),
+      Math.abs(tl.y - br.y)
+    );
   },
 
   localToParent: function(target) {
@@ -516,8 +526,6 @@ var PCanvas = Class.extend({
   },
   
   paint: function() {
-    if (!this.canvas)
-      console.log(this.canvas);
     var ctx = this.canvas.getContext('2d');
     
     ctx.font="16pt Helvetica";
