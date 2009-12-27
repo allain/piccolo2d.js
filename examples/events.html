@@ -23,20 +23,27 @@
       layer : pCanvas.camera.layers[0],
       scheduler: pCanvas.camera.getRoot().scheduler
     }) {
-      var click1 = new PText({text: "Click Me", bounds: new PBounds(0,0, 100, 16)});
-      layer.addChild(click1);
-      click1.addListener({
-        click: function(event) {
-          click1.animateToTransform(new PTransform().translate(300, 0), 1000);
+      for (var x=0; x<10; x++) {
+        for (var y=0; y<10; y++) {
+          var box = new PNode({
+            fillStyle: "rgb(255,0,0)",
+            bounds: new PBounds(0,0, 100, 100),
+          }).scale(0.25).translate(30*x, 30*y);
+          layer.addChild(box);
         }
-      });
+      }
 
-      var click2 = new PText({text: "Click Me", bounds: new PBounds(0, 0, 100, 16)});
-      click2.translate(0, 30);
-      layer.addChild(click2);
-      click2.addListener({
+      layer.addListener({
         click: function(event) {
-          click2.animateToTransform(new PTransform().translate(300, 0), 1000);
+          if (event.pickedNodes[0] instanceof PLayer) {
+            console.log("Zooming to full view");
+            camera.animateViewToTransform(new PTransform(), 500);
+          } else {
+            var t = event.pickedNodes[0].getGlobalTransform();
+            var inv = t.getInverse();
+
+            camera.animateViewToTransform(inv, 500);
+          }
         }
       });
     }

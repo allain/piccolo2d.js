@@ -210,7 +210,7 @@ var PBounds = Class.extend({
   },
 
   contains: function(p) {
-    return p.x >= this.x && p.x < this.x + this.width && p.y >= this.y && p.y < this.y + this.width;
+    return p.x >= this.x && p.x < this.x + this.width && p.y >= this.y && p.y < this.y + this.height;
   }
 });
 
@@ -341,6 +341,19 @@ var PNode = Class.extend({
       Math.abs(tl.x - br.x),
       Math.abs(tl.y - br.y)
     );
+  },
+
+  getGlobalTransform: function() {
+    var t = new PTransform();
+
+    var currentNode = this;
+
+    while (currentNode.parent) {
+      t = currentNode.transform.transform(t);
+      currentNode = currentNode.parent;
+    }
+
+    return t;
   },
 
   localToParent: function(target) {
@@ -477,7 +490,8 @@ var PCamera = PNode.extend({
 
     var pickedNodes = [];
     for (var i=0; i<this.layers.length; i++) {
-      pickedNodes.pushAll(this._getPickedNodes(this.layers[i], globalPoint));
+      layerPoint = this.layers[i].transform.getInverse().transform(globalPoint);
+      pickedNodes.pushAll(this._getPickedNodes(this.layers[i], layerPoint));
     }
 
     return pickedNodes;
@@ -487,7 +501,7 @@ var PCamera = PNode.extend({
     var pickedChildren = [];
     for (var i=0; i < parent.children.length; i++) {
       var childBounds = parent.children[i].getFullBounds();
-      var childPoint = parent.children[i].transform.transform(parentPoint);
+      var childPoint = parent.children[i].transform.getInverse().transform(parentPoint);
       if (childBounds.contains(childPoint)) {
         var picked = this._getPickedNodes(parent.children[i], childPoint);
         pickedChildren.pushAll(picked);
@@ -497,7 +511,15 @@ var PCamera = PNode.extend({
       pickedChildren.push(parent);
     }
     return pickedChildren;
-  }
+  },
+
+  animateViewToTransform: function(transform, duration) {
+    this.getRoot().scheduler.schedule(new PViewTransformActivity(this, transform, duration));
+  },
+
+  setViewTransform: function(transform) {
+    this.viewTransform = transform;
+  },
 
 });
 
@@ -708,5 +730,31 @@ var PTransformActivity = PActivity.extend({
   
   finished: function() {    
     this.node.setTransform(this.target);
+  }
+});
+
+
+var PViewTransformActivity = PActivity.extend({
+  init: function(camera, targetTransform, duration) {
+    this._super();
+    this.duration = duration;
+    this.camera = camera;
+    this.source = camera.viewTransform;
+    this.target = targetTransform;
+  },
+
+  started: function() {
+  },
+
+  step: function(ellapsedMillis) {
+    var zeroToOne = ellapsedMillis/this.duration;
+    var dest = PTransform.lerp(this.source, this.target, zeroToOne);
+    this.camera.setViewTransform(dest);
+
+    return ellapsedMillis < this.duration;
+  },
+
+  finished: function() {
+    this.camera.setViewTransform(this.target);
   }
 });
