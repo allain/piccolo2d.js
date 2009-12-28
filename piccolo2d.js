@@ -246,7 +246,8 @@ var PNode = Class.extend({
   paintAfterChildren: function (ctx) {
   },    
   
-  fullPaint: function(ctx) {    
+  fullPaint: function(ctx) {
+    
     if (this.visible) { //TODO: fullIntersects(paintContext.getLocalClip())) {
       ctx.save();
       this.transform.applyTo(ctx);
@@ -316,7 +317,7 @@ var PNode = Class.extend({
       var tBounds = child.transform.transform(childFullBounds);
       with (tBounds) {
         fullBounds.add(x, y, width, height);
-      }
+        }
     }
 
     return fullBounds;
@@ -340,7 +341,7 @@ var PNode = Class.extend({
       Math.min(tl.y, br.y),
       Math.abs(tl.x - br.x),
       Math.abs(tl.y - br.y)
-    );
+      );
   },
 
   getGlobalTransform: function() {
@@ -553,7 +554,7 @@ var PCanvas = Class.extend({
     
     with (this.camera.getRoot().scheduler) {
       schedule(new RepaintActivity());
-    }
+      }
     
     function processEvent(type, event, pickedNodes) {
       var currentNode = pickedNodes[0];
@@ -561,7 +562,10 @@ var PCanvas = Class.extend({
         for (var i=0; i<currentNode.listeners.length; i++) {
           var listener = currentNode.listeners[i];
           if (listener[type]) {
-            listener[type]({"event": event, "pickedNodes": pickedNodes});
+            listener[type]({
+              "event": event,
+              "pickedNodes": pickedNodes
+            });
           }
         }
         currentNode = currentNode.parent;
@@ -582,7 +586,6 @@ var PCanvas = Class.extend({
   
   paint: function() {
     var ctx = this.canvas.getContext('2d');
-    
     ctx.font="16pt Helvetica";
     ctx.fillStyle="rgb(255,255,255)";
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -663,7 +666,7 @@ var PActivityScheduler = Class.extend({
           } else {            
             finished();
           }
-        }
+          }
       }
     }
     

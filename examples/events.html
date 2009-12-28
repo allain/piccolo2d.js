@@ -15,7 +15,6 @@
     if (typeof console == "undefined")
       console = {log: function() {}};
 
-    // Example usage
     var pCanvas = new PCanvas('canvas');
 
     with ({
@@ -25,33 +24,24 @@
     }) {
       for (var x=0; x<10; x++) {
         for (var y=0; y<10; y++) {
-          var box = new PNode({
+          layer.addChild(new PNode({
             fillStyle: "rgb(255,0,0)",
             bounds: new PBounds(0,0, 100, 100),
-          }).scale(0.25).translate(30*x, 30*y);
-          layer.addChild(box);
+          }).scale(0.25).translate(30*x, 30*y));
         }
       }
 
       layer.addListener({
         click: function(event) {
-          if (event.pickedNodes[0] instanceof PLayer) {
-            console.log("Zooming to full view");
-            camera.animateViewToTransform(new PTransform(), 500);
-          } else {
-            var t = event.pickedNodes[0].getGlobalTransform();
-            var inv = t.getInverse();
+          var globalTransform = event.pickedNodes[0].getGlobalTransform();
+          var inverse = globalTransform.getInverse();
 
-            camera.animateViewToTransform(inv, 500);
-          }
+          camera.animateViewToTransform(inverse, 500);
         }
       });
     }
   </script>
-  <h1>Activity Example</h1>
-  <p>This example contains:</p>
-  <ul>
-    <li>100 Rectangles being scheduled every 1.5 seconds for 1 second.</li>
-  </ul>
+  <h1>Events Example</h1>
+  <p>Click on a square to zoom in on it, or the white background to zoom out completely.</p>
 </body>
 </html>
