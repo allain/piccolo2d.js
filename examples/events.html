@@ -25,7 +25,7 @@
       for (var x=0; x<10; x++) {
         for (var y=0; y<10; y++) {
           layer.addChild(new PNode({
-            fillStyle: "rgb(255,0,0)",
+            fillStyle: "rgb("+Math.round(Math.random()*255)+","+Math.round(Math.random()*255)+","+Math.round(Math.random()*255)+")",
             bounds: new PBounds(0,0, 100, 100),
           }).scale(0.25).translate(30*x, 30*y));
         }
