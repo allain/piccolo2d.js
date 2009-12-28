@@ -258,23 +258,6 @@
           equal(p.x, 1, "x is 1");
           equal(p.y, 2, "y is 2");
         });
-
-        test("distanceFrom returns 0 when same point", function() {
-          var p = new PPoint(1,2);
-          equal(p.distanceFrom(p), 0);
-        });
-
-        test("distanceFrom returns correct distance when points horizontal", function() {
-          var p1 = new PPoint(-2, 0);
-          var p2 = new PPoint(2, 0);
-          equal(p1.distanceFrom(p2), 4);
-        });
-
-        test("distanceFrom returns correct distance when points vertical", function() {
-          var p1 = new PPoint(0, -2);
-          var p2 = new PPoint(0, 2);
-          equal(p1.distanceFrom(p2), 4);
-        });
       }
 
       function testPNode() {

@@ -1,7 +1,6 @@
 Array.prototype.pushAll = function(x) {
-  for (var i=0; i<x.length; i++) {
+  for (var i=0; i<x.length; i++) 
     this.push(x[i]);
-  }
 }
 
 Array.prototype.remove = function(x) {
@@ -22,12 +21,14 @@ var PTransform = Class.extend({
   scale: function(ratio) {
     this.values[0] *= ratio;
     this.values[3] *= ratio;
+
     return this;
   },
   
   translate: function(dx, dy) {
     this.values[4] += dx;
     this.values[5] += dy;
+
     return this;
   },
   
@@ -36,6 +37,7 @@ var PTransform = Class.extend({
     var sin = Math.sin(theta);
   
     this.transformBy([cos, sin, -sin, cos, 0, 0]);
+
     return this;
   },
   
@@ -84,8 +86,8 @@ var PTransform = Class.extend({
       return new PBounds(
         Math.min(tPos.x, tBottomRight.x),
         Math.min(tPos.y, tBottomRight.y),
-        Math.abs(tPos.x-tBottomRight.x),
-        Math.abs(tPos.y-tBottomRight.y)
+        Math.abs(tPos.x - tBottomRight.x),
+        Math.abs(tPos.y - tBottomRight.y)
         );
     } else if (target instanceof PTransform) {
       var transform = new PTransform(this.values);
@@ -93,8 +95,10 @@ var PTransform = Class.extend({
       return transform;
     }
 
-    throw "Invalid argument to transform metho"
+    throw "Invalid argument to transform method";
   },
+
+  /** Returns the inverse matrix for this Transform */
   getInverse: function() {
     var m = this.values;
 
@@ -102,12 +106,14 @@ var PTransform = Class.extend({
     return new PTransform([
       m[3]/det, -m[1]/det,
       -m[2]/det, m[0]/det,
-      (m[2]*m[5]-m[3]*m[4])/det, -(m[0]*m[5]-m[1]*m[4])/det]);
+      (m[2]*m[5]-m[3]*m[4])/det,
+      -(m[0]*m[5]-m[1]*m[4])/det]);
   }
 });
 
 PTransform.lerp = function (t1, t2, zeroToOne) {
   var dest = [];
+
   for (var i=0; i<6 ;i++) 
     dest[i] = t1.values[i] + zeroToOne*(t2.values[i]-t1.values[i]);
   
@@ -125,17 +131,9 @@ var PPoint = Class.extend({
     } else if (arguments.length == 2) {
       this.x = arguments[0];
       this.y = arguments[1];
+    } else {
+      throw "Illegal argument for PPoint constructor"
     }
-  },
-
-  distanceFrom: function() {
-    if (arguments.length == 1 && arguments[0] instanceof PPoint) {
-      var p = arguments[0];
-      return Math.sqrt(Math.pow(p.x-this.x, 2) + Math.pow(p.y-this.y, 2));
-    } else if (arguments.length == 2) {
-      return Math.sqrt(Math.pow(arguments[0]-this.x, 2) + Math.pow(arguments[1]-this.y, 2));
-    }
-    throw "Invalid arguments to distanceFrom";
   }
 });
 
@@ -209,8 +207,20 @@ var PBounds = Class.extend({
     this.touched = true;
   },
 
-  contains: function(p) {
-    return p.x >= this.x && p.x < this.x + this.width && p.y >= this.y && p.y < this.y + this.height;
+  contains: function() {
+    var x = 0;
+    var y = 0;
+    if (arguments.length == 1) {
+      x = arguments[0].x;
+      y = arguments[0].y
+    } else if (arguments.length == 2) {
+      x = arguments[0];
+      y = arguments[1];
+    } else {
+      throw "Invalid argument to contains";
+    }
+ 
+    return x >= this.x && x < this.x + this.width && y >= this.y && y < this.y + this.height;
   }
 });
 
@@ -500,18 +510,17 @@ var PCamera = PNode.extend({
   
   _getPickedNodes: function (parent, parentPoint) {
     var pickedChildren = [];
+
     for (var i=0; i < parent.children.length; i++) {
       var childBounds = parent.children[i].getFullBounds();
-      var childPoint = parent.children[i].transform.getInverse().transform(parentPoint);
+      var childPoint = parent.children[i].parentToLocal(parentPoint);
       if (childBounds.contains(childPoint)) {
         var picked = this._getPickedNodes(parent.children[i], childPoint);
         pickedChildren.pushAll(picked);
       }
     }
-    if (pickedChildren.length == 0) {
-      pickedChildren.push(parent);
-    }
-    return pickedChildren;
+
+    return (pickedChildren.length == 0) ? [parent] : pickedChildren;
   },
 
   animateViewToTransform: function(transform, duration) {
@@ -520,7 +529,7 @@ var PCamera = PNode.extend({
 
   setViewTransform: function(transform) {
     this.viewTransform = transform;
-  },
+  }
 
 });
 
@@ -654,14 +663,12 @@ var PActivityScheduler = Class.extend({
         keepers.push(sActivity);
       } else {
         with(sActivity.activity) {
-          var ellapsedTime = currentTime-sActivity.startTime;
           if (!stepping) {
             stepping = true;
             started();
           }
 
-          var result = step(ellapsedTime);
-          if (result) {
+          if (step(currentTime-sActivity.startTime) !== false) {
             keepers.push(sActivity);
           } else {            
             finished();
@@ -671,9 +678,8 @@ var PActivityScheduler = Class.extend({
     }
     
     this.activities = keepers;
-    if (!this.activities) {
+    if (!this.activities)
       this._stop();
-    }
   },
   
   _start: function() {
@@ -699,7 +705,7 @@ var PActivityScheduler = Class.extend({
             throw e;
           }
         }
-      })(), 25) 
+      })(), this.pollingRate)
     }
   },
   
