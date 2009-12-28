@@ -1,0 +1,9 @@
+body {
+  font-family: helvetica;
+}
+
+canvas {
+  float: right;
+  border: 2px solid #666;
+}
+

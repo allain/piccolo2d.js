@@ -1,12 +1,14 @@
 <html>
   <head>
     <title>Sticky Node Example - Piccolo2d.js</title>
+    <link rel="stylesheet" href="examples.css" />
   </head>
   <body>
-  <canvas id="canvas" width="900" height="600">
+  <canvas id="canvas" width="600" height="400">
     <p>No Canvas Support in this browser.</p>
   </canvas>
   <script type="text/javascript" src="../lib/javascript-1.6.js"></script>
+  <script type="text/javascript" src="../lib/jquery-1.3.2.min.js"></script>
   <script type="text/javascript" src="../extends.js"></script>
   <script type="text/javascript" src="../piccolo2d.js"></script>
   <script type="text/javascript">
@@ -40,5 +42,12 @@
       }));
     }
   </script>
+  <h1>Sticky Node Example</h1>
+  <p>This example contains:</p>
+  <ul>
+    <li>A node attached to the camera</li>
+    <li>A node attached to the layer</li>
+    <li>An activity that transforms the layer's transform along a sine wave.</li>
+  </ul>
 </body>
 </html>
