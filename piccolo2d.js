@@ -685,28 +685,30 @@ var PActivityScheduler = Class.extend({
   _start: function() {
     var _this = this;
     
-    if (!this.intervalID) {
-      this.intervalID = setInterval((function() {
-        var busy = false; 
-        return function() {
-          if (busy == true) {
-            console.log("too busy for scheduling poll");
-            return;
-          }
-          busy = true;
-          try {
-            _this.currentTime = new Date().getTime();
-            
-            _this.step();
-             
-            busy = false;
-          } catch (e) {
-            busy = false;
-            throw e;
-          }
+    if (this.intervalID)
+      return ;
+
+    this.intervalID = setInterval((function() {
+      var busy = false;
+      
+      return function() {
+        if (busy) {
+          console.log("too busy for scheduling poll");
+          return;
         }
-      })(), this.pollingRate)
-    }
+        busy = true;
+        try {
+          _this.currentTime = new Date().getTime();
+            
+          _this.step();
+             
+          busy = false;
+        } catch (e) {
+          busy = false;
+          throw e;
+        }
+      }
+    })(), this.pollingRate)
   },
   
   _stop: function() {
@@ -726,9 +728,6 @@ var PTransformActivity = PActivity.extend({
     this.target = targetTransform;
   },
 
-  started: function() {    
-  },
-
   step: function(ellapsedMillis) {
     var zeroToOne = ellapsedMillis/this.duration;
     var dest = PTransform.lerp(this.source, this.target, zeroToOne);
@@ -741,7 +740,6 @@ var PTransformActivity = PActivity.extend({
     this.node.setTransform(this.target);
   }
 });
-
 
 var PViewTransformActivity = PActivity.extend({
   init: function(camera, targetTransform, duration) {
