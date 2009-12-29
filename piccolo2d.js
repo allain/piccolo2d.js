@@ -622,15 +622,40 @@ var PActivity = Class.extend({
 
     }
   },
-   
+
   started: function() {
   },
-   
+
   step: function(ellapsedMillis) {
   },
-   
+
   finished: function() {
   }
+});
+
+var PInterpolatingActivity = Class.extend({
+  init: function(options) {
+    this.stepping = false;
+    if (typeof options !== "undefined") {
+      this._super(options);
+
+      if (options.duration)
+        this.duration = options.duration;
+    }
+  },  
+
+  step: function(ellapsedMillis) {
+    if (ellapsedMillis >= this.duration)
+      return false;
+
+    this.interpolate(ellapsedMillis/this.duration);
+
+    return true;
+  },
+
+  interpolate: function (zeroToOne) {
+  }
+
 });
 
 var PActivityScheduler = Class.extend({
@@ -639,6 +664,7 @@ var PActivityScheduler = Class.extend({
     this.nextCallTime = 0;
     this.activities = [];
     this.intervalID = null;
+    this.globalTime = new Date().getTime();
   },
   
   schedule: function(activity, startTime) {
@@ -653,13 +679,13 @@ var PActivityScheduler = Class.extend({
   },
   
   step: function() {
-    var currentTime = new Date().getTime();
+    this.globalTime = new Date().getTime();
     var keepers = [];
     
     for (var i=0; i<this.activities.length; i++) {
       var sActivity = this.activities[i];
       
-      if (sActivity.startTime > currentTime) {        
+      if (sActivity.startTime > this.globalTime) {
         keepers.push(sActivity);
       } else {
         with(sActivity.activity) {
@@ -668,12 +694,12 @@ var PActivityScheduler = Class.extend({
             started();
           }
 
-          if (step(currentTime-sActivity.startTime) !== false) {
+          if (step(this.globalTime-sActivity.startTime) !== false) {
             keepers.push(sActivity);
           } else {            
             finished();
           }
-          }
+        }
       }
     }
     
@@ -682,33 +708,14 @@ var PActivityScheduler = Class.extend({
       this._stop();
   },
   
-  _start: function() {
-    var _this = this;
-    
-    if (this.intervalID)
-      return ;
-
-    this.intervalID = setInterval((function() {
-      var busy = false;
-      
-      return function() {
-        if (busy) {
-          console.log("too busy for scheduling poll");
-          return;
-        }
-        busy = true;
-        try {
-          _this.currentTime = new Date().getTime();
-            
-          _this.step();
-             
-          busy = false;
-        } catch (e) {
-          busy = false;
-          throw e;
-        }
-      }
-    })(), this.pollingRate)
+  _start: function() {    
+    if (!this.intervalID) {
+      var _this = this;
+      this.intervalID = setInterval(function() {
+        _this.currentTime = new Date().getTime();
+        _this.step();
+      }, this.pollingRate);
+    }
   },
   
   _stop: function() {
@@ -719,7 +726,7 @@ var PActivityScheduler = Class.extend({
   }
 });
 
-var PTransformActivity = PActivity.extend({
+var PTransformActivity = PInterpolatingActivity.extend({
   init: function(node, targetTransform, duration) {
     this._super();
     this.duration = duration;
@@ -728,12 +735,10 @@ var PTransformActivity = PActivity.extend({
     this.target = targetTransform;
   },
 
-  step: function(ellapsedMillis) {
-    var zeroToOne = ellapsedMillis/this.duration;
+  interpolate: function(zeroToOne) {
     var dest = PTransform.lerp(this.source, this.target, zeroToOne);
-    this.node.setTransform(dest);
     
-    return ellapsedMillis < this.duration;
+    this.node.setTransform(dest);       
   },
   
   finished: function() {    
@@ -741,7 +746,7 @@ var PTransformActivity = PActivity.extend({
   }
 });
 
-var PViewTransformActivity = PActivity.extend({
+var PViewTransformActivity = PInterpolatingActivity.extend({
   init: function(camera, targetTransform, duration) {
     this._super();
     this.duration = duration;
@@ -750,15 +755,9 @@ var PViewTransformActivity = PActivity.extend({
     this.target = targetTransform;
   },
 
-  started: function() {
-  },
-
-  step: function(ellapsedMillis) {
-    var zeroToOne = ellapsedMillis/this.duration;
+  interpolate: function(zeroToOne) {
     var dest = PTransform.lerp(this.source, this.target, zeroToOne);
     this.camera.setViewTransform(dest);
-
-    return ellapsedMillis < this.duration;
   },
 
   finished: function() {
