@@ -229,7 +229,8 @@ var PNode = Class.extend({
     this.parent = null;
     this.children = [];
     this.listeners = [];
-    this.bounds = new PBounds();      
+    this.bounds = new PBounds();
+    this.fullBounds = null;
     this.fillStyle = null;            
     this.transform = new PTransform();
     this.visible = true;                
@@ -257,7 +258,6 @@ var PNode = Class.extend({
   },    
   
   fullPaint: function(ctx) {
-    
     if (this.visible) { //TODO: fullIntersects(paintContext.getLocalClip())) {
       ctx.save();
       this.transform.applyTo(ctx);
@@ -276,11 +276,13 @@ var PNode = Class.extend({
   
   scale: function(ratio) {
     this.transform.scale(ratio);
+    this.fullBounds = null;
     return this;
   },
   
   translate: function(dx, dy) {
     this.transform.translate(dx, dy);
+    this.fullBounds = null;
     return this;
   },
   
@@ -291,16 +293,19 @@ var PNode = Class.extend({
   
   addChild: function(child) {
     this.children.push(child);
+    this.fullBounds = null;
     child.parent = this;
   },
 
   removeChild: function(child) {
     child.parent = null;
+    this.fullBounds = null;
     this.children = this.children.remove(child);
   },
 
   setTransform: function(transform) {
-    this.transform = transform; 
+    this.transform = transform;
+    this.fullBounds = null;
   },
 
   animateToTransform: function (transform, duration) {
@@ -319,18 +324,19 @@ var PNode = Class.extend({
   },
 
   getFullBounds: function() {
-    var fullBounds = this.bounds.clone();
+    if (this.fullBounds)
+      return this.fullBounds;
+
+    this.fullBounds = this.bounds.clone();
     
     for (var i=0; i<this.children.length; i++) {
       var child = this.children[i];
       var childFullBounds = child.getFullBounds();
       var tBounds = child.transform.transform(childFullBounds);
-      with (tBounds) {
-        fullBounds.add(x, y, width, height);
-        }
+      this.fullBounds.add(tBounds.x, tBounds.y, tBounds.width, tBounds.height);
     }
 
-    return fullBounds;
+    return this.fullBounds;
   },
 
   getGlobalFullBounds: function() {
@@ -625,12 +631,14 @@ var PCanvas = Class.extend({
   },
   
   paint: function() {
+    var start = new Date().getTime();
     var ctx = this.canvas.getContext('2d');
     ctx.font="16pt Helvetica";
     ctx.fillStyle="rgb(255,255,255)";
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
-    this.camera.fullPaint(ctx);   
+    this.camera.fullPaint(ctx);
+    console.log(new Date().getTime() - start);
   },
 
   getPickedNodes: function(x, y) {
