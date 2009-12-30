@@ -633,7 +633,7 @@ var PActivity = Class.extend({
   }
 });
 
-var PInterpolatingActivity = Class.extend({
+var PInterpolatingActivity = PActivity.extend({
   init: function(options) {
     this.stepping = false;
     if (typeof options !== "undefined") {
@@ -756,6 +756,7 @@ var PViewTransformActivity = PInterpolatingActivity.extend({
   },
 
   interpolate: function(zeroToOne) {
+    console.log(zeroToOne);
     var dest = PTransform.lerp(this.source, this.target, zeroToOne);
     this.camera.setViewTransform(dest);
   },
