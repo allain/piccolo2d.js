@@ -638,7 +638,7 @@ var PCanvas = Class.extend({
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     this.camera.fullPaint(ctx);
-    console.log(new Date().getTime() - start);
+    //console.log(new Date().getTime() - start);
   },
 
   getPickedNodes: function(x, y) {
@@ -707,12 +707,8 @@ var PActivityScheduler = Class.extend({
   
   schedule: function(activity, startTime) {
     startTime = startTime || new Date().getTime();
-    
-    this.activities.push({
-      activity: activity,
-      startTime: startTime      
-    });
-
+    activity.startTime = startTime;
+    this.activities.push(activity);
     this._start();
   },
   
@@ -721,23 +717,21 @@ var PActivityScheduler = Class.extend({
     var keepers = [];
     
     for (var i=0; i<this.activities.length; i++) {
-      var sActivity = this.activities[i];
+      var activity = this.activities[i];
       
-      if (sActivity.startTime > this.globalTime) {
-        keepers.push(sActivity);
+      if (activity.startTime > this.globalTime) {
+        keepers.push(activity);
       } else {
-        with(sActivity.activity) {
-          if (!stepping) {
-            stepping = true;
-            started();
-          }
-
-          if (step(this.globalTime-sActivity.startTime) !== false) {
-            keepers.push(sActivity);
-          } else {            
-            finished();
-          }
-          }
+        if (!activity.stepping) {
+          activity.stepping = true;
+          activity.started();
+        }
+     
+        if (activity.step(this.globalTime - activity.startTime) !== false) {
+          keepers.push(activity);
+        } else {
+          activity.finished();
+        }
       }
     }
     
