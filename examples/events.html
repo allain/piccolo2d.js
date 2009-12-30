@@ -7,7 +7,7 @@
   <canvas id="canvas" width="400" height="400">
     <p>No Canvas Support in this browser.</p>
   </canvas>
-  
+
   <script type="text/javascript" src="../lib/javascript-1.6.js"></script>
   <script type="text/javascript" src="../extends.js"></script>
   <script type="text/javascript" src="../lib/jquery-1.3.2.min.js"></script>
@@ -24,9 +24,19 @@
       layer : pCanvas.camera.layers[0],
       scheduler: pCanvas.camera.getRoot().scheduler
     }) {
+      var ZoomNode = PNode.extend({
+        paintAfterChildren: function(ctx) {
+          if (this.highlighted) {
+            ctx.fillStyle = "rgb(0,0,255)";
+            ctx.lineWidth = 10;
+            ctx.strokeRect(0, 0, this.bounds.width, this.bounds.height);
+          }
+        }
+      })
+
       for (var x=0; x<10; x++) {
         for (var y=0; y<10; y++) {
-          layer.addChild(new PNode({
+          layer.addChild(new ZoomNode({
             fillStyle: "rgb("+Math.round(Math.random()*255)+","+Math.round(Math.random()*255)+","+Math.round(Math.random()*255)+")",
             bounds: new PBounds(0,0, 100, 100),
           }).scale(0.25).translate(30*x, 30*y));
@@ -39,6 +49,14 @@
           var inverse = globalTransform.getInverse();
 
           camera.animateViewToTransform(inverse, 500);
+        },
+
+        mouseout: function(event) {
+          event.pickedNodes[0].highlighted = false;
+        },
+
+        mouseover: function(event) {
+          event.pickedNodes[0].highlighted = true;
         }
       });
     }

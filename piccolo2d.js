@@ -552,20 +552,14 @@ var PCanvas = Class.extend({
     this.camera.addLayer(layer);
     this.invalidPaint = true;
     
-    var RepaintActivity = PActivity.extend({      
+    this.camera.getRoot().scheduler.schedule(new PActivity({
       step: function() {
         if (_pCanvas.invalidPaint)
           _pCanvas.paint();
-
-        return true;
       }
-    });
+    }));
     
-    with (this.camera.getRoot().scheduler) {
-      schedule(new RepaintActivity());
-      }
-    
-    function processEvent(type, event, pickedNodes) {
+    function dispatchEvent(type, event, pickedNodes) {
       var currentNode = pickedNodes[0];
       while (currentNode) {
         for (var i=0; i<currentNode.listeners.length; i++) {
@@ -581,16 +575,53 @@ var PCanvas = Class.extend({
       }
     }
 
-    //TODO: Remove need for jQuery here
-    $(canvas).click(function(event) {
-      var offset = $(canvas).offset();
-      var x = event.clientX - offset.left;
-      var y = event.clientY - offset.top;
-      
-      processEvent("click", event, _pCanvas.getPickedNodes(x, y));
+    var previousPickedNodes = [];
 
-    })
+    function subtract(a, b) {
+      var aminusb = [];
+
+      for (var i=0; i<a.length; i++)
+        if (b.indexOf(a[i]) == -1)
+          aminusb.push(a[i]);
+
+      return aminusb;
+    }
+
+    function processMouseOvers(oldNodes, newNodes, event) {
+      var mouseOutNodes = subtract(oldNodes, newNodes);
+      if (mouseOutNodes.length)
+        dispatchEvent("mouseout", event, mouseOutNodes);
+
+      var mouseOverNodes = subtract(newNodes, oldNodes);
+      if (mouseOverNodes.length)
+        dispatchEvent("mouseover", event, mouseOverNodes);
+    }
+
+    function processMouseEvent(name, event) {
+      var offset = $(canvas).offset();
+      var x = event.pageX - offset.left;
+      var y = event.pageY - offset.top;
+
+      var newPickedNodes = _pCanvas.getPickedNodes(x, y);
+
+      processMouseOvers(previousPickedNodes, newPickedNodes, event);
+
+      dispatchEvent(name, event, newPickedNodes);
+      previousPickedNodes = newPickedNodes;
+    }
     
+    $(canvas).click(function(event) {
+      processMouseEvent("click", event);
+    });
+
+    $(canvas).mousemove(function(event) {
+      processMouseEvent("mousemove", event);
+    });
+
+    $(canvas).mouseout(function(event) {
+      dispatchEvent("mouseout", event, previousPickedNodes);
+      previousPickedNodes = [];
+    });
   },
   
   paint: function() {
@@ -619,7 +650,6 @@ var PActivity = Class.extend({
         this.step = options.step;
       if (options.finished)
         this.finished = options.finished;
-
     }
   },
 
@@ -699,7 +729,7 @@ var PActivityScheduler = Class.extend({
           } else {            
             finished();
           }
-        }
+          }
       }
     }
     
@@ -756,7 +786,6 @@ var PViewTransformActivity = PInterpolatingActivity.extend({
   },
 
   interpolate: function(zeroToOne) {
-    console.log(zeroToOne);
     var dest = PTransform.lerp(this.source, this.target, zeroToOne);
     this.camera.setViewTransform(dest);
   },

@@ -45,15 +45,14 @@
         },
 
         step: function() {          
-          var currentTime = new Date().getTime();
-          if (currentTime - this.lastCalled > 1500) {
+          if (scheduler.globalTime - this.lastCalled > 1500) {
             for (var i=0; i<squareContainer.children.length; i++) {
               var x = Math.round(Math.random()* 380) + 10;
               var y = Math.round(Math.random()* 380) + 10;
               squareContainer.children[i].animateToTransform(new PTransform().translate(x, y), 1000);
             }
             
-            this.lastCalled = currentTime;            
+            this.lastCalled = scheduler.globalTime;
           }
           
           return true;
