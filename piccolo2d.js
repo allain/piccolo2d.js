@@ -178,10 +178,26 @@ var PBounds = Class.extend({
     return this.width == 0 && this.height ==0;
   },
 
-  add: function(x, y, width, height) {
-    width = width ? width : 0;
-    height = height ? height : 0;
-
+  add: function() {
+    if (arguments.length == 1) {
+      var x = arguments[0].x;
+      var y = arguments[0].y;
+      var width = arguments[0].width ? arguments[0].width : 0;
+      var height = arguments[0].height ? arguments[0].height : 0;
+    } else if (arguments.length == 2) {
+      var x = arguments[0];
+      var y = arguments[1];
+      var width = 0;
+      var height = 0;
+    } else if (arguments.length == 4) {
+      var x = arguments[0];
+      var y = arguments[1];
+      var width = arguments[2];
+      var height = arguments[3];
+    } else {
+      throw "invalid arguments to PBounds.add";
+    }
+    
     if (this.touched) {
       var newX = Math.min(x, this.x);
       var newY = Math.min(y, this.y);
@@ -208,16 +224,14 @@ var PBounds = Class.extend({
   },
 
   contains: function() {
-    var x = 0;
-    var y = 0;
-    if (arguments.length == 1) {
-      x = arguments[0].x;
-      y = arguments[0].y
-    } else if (arguments.length == 2) {
-      x = arguments[0];
-      y = arguments[1];
+    if (arguments.length === 1) {
+      var x = arguments[0].x;
+      var y = arguments[0].y
+    } else if (arguments.length === 2) {
+      var x = arguments[0];
+      var y = arguments[1];
     } else {
-      throw "Invalid argument to contains";
+      throw "Invalid arguments";
     }
  
     return x >= this.x && x < this.x + this.width && y >= this.y && y < this.y + this.height;
@@ -295,17 +309,22 @@ var PNode = Class.extend({
     this.children.push(child);
     this.fullBounds = null;
     child.parent = this;
+
+    return this;
   },
 
   removeChild: function(child) {
     child.parent = null;
     this.fullBounds = null;
     this.children = this.children.remove(child);
+
+    return this;
   },
 
   setTransform: function(transform) {
     this.transform = transform;
     this.fullBounds = null;
+    return this;
   },
 
   animateToTransform: function (transform, duration) {
@@ -333,7 +352,7 @@ var PNode = Class.extend({
       var child = this.children[i];
       var childFullBounds = child.getFullBounds();
       var tBounds = child.transform.transform(childFullBounds);
-      this.fullBounds.add(tBounds.x, tBounds.y, tBounds.width, tBounds.height);
+      this.fullBounds.add(tBounds);
     }
 
     return this.fullBounds;
@@ -552,32 +571,33 @@ var PCanvas = Class.extend({
     this.root =  root || new PRoot();
     this.camera = new PCamera();
     this.camera.bounds = new PBounds(0, 0, canvas.width, canvas.height);
+
     var layer = new PLayer();
     this.root.addChild(layer);
     this.root.addChild(this.camera);
     this.camera.addLayer(layer);
-    this.invalidPaint = true;
     
     this.camera.getRoot().scheduler.schedule(new PActivity({
       step: function() {
-        if (_pCanvas.invalidPaint)
-          _pCanvas.paint();
+        _pCanvas.paint();
       }
     }));
     
     function dispatchEvent(type, event, pickedNodes) {
-      var currentNode = pickedNodes[0];
-      while (currentNode) {
-        for (var i=0; i<currentNode.listeners.length; i++) {
-          var listener = currentNode.listeners[i];
-          if (listener[type]) {
-            listener[type]({
-              "event": event,
-              "pickedNodes": pickedNodes
-            });
+      for (var nodeIndex=0; nodeIndex<pickedNodes.length; nodeIndex++) {
+        var currentNode = pickedNodes[nodeIndex];
+        while (currentNode) {
+          for (var i=0; i<currentNode.listeners.length; i++) {
+            var listener = currentNode.listeners[i];
+            if (listener[type]) {
+              listener[type]({
+                "event": event,
+                "pickedNodes": pickedNodes
+              });
+            }
           }
+          currentNode = currentNode.parent;
         }
-        currentNode = currentNode.parent;
       }
     }
 
@@ -587,7 +607,7 @@ var PCanvas = Class.extend({
       var aminusb = [];
 
       for (var i=0; i<a.length; i++)
-        if (b.indexOf(a[i]) == -1)
+        if (b.indexOf(a[i]) === -1)
           aminusb.push(a[i]);
 
       return aminusb;
@@ -616,12 +636,21 @@ var PCanvas = Class.extend({
       previousPickedNodes = newPickedNodes;
     }
     
+    //TODO: Remove jQuery dependence
     $(canvas).click(function(event) {
       processMouseEvent("click", event);
     });
 
     $(canvas).mousemove(function(event) {
       processMouseEvent("mousemove", event);
+    });
+
+    $(canvas).mousedown(function(event) {
+      processMouseEvent("mousedown", event);
+    });
+
+    $(canvas).mouseup(function(event) {
+      processMouseEvent("mouseup", event);
     });
 
     $(canvas).mouseout(function(event) {
@@ -631,14 +660,12 @@ var PCanvas = Class.extend({
   },
   
   paint: function() {
-    var start = new Date().getTime();
     var ctx = this.canvas.getContext('2d');
     ctx.font="16pt Helvetica";
     ctx.fillStyle="rgb(255,255,255)";
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     
     this.camera.fullPaint(ctx);
-    //console.log(new Date().getTime() - start);
   },
 
   getPickedNodes: function(x, y) {
