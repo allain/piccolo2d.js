@@ -65,38 +65,25 @@
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(0, 2, 3, 4);
           ok(!bounds1.equals(bounds2), "bounds different");
-        })
+        });
 
         test("bounds should not equal when y different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(1, 0, 3, 4);
           ok(!bounds1.equals(bounds2), "bounds different");
-        })
+        });
 
         test("bounds should not equal when width different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(1, 2, 0, 4);
           ok(!bounds1.equals(bounds2), "bounds different");
-        })
+        });
 
         test("bounds should not equal when height different", function() {
           var bounds1 = new PBounds(1, 2, 3, 4);
           var bounds2 = new PBounds(1, 2, 3, 0);
           ok(!bounds1.equals(bounds2), "bounds different");
-        })
-
-        test("cloning bounds should result equal bounds", function() {
-          var bounds1 = new PBounds(1, 2, 3, 4);
-          var bounds2 = bounds1.clone();
-          ok(bounds1.equals(bounds2), "bounds different");
-        })
-
-        test("cloning bounds returns different object", function() {
-          var bounds1 = new PBounds(1, 2, 3, 4);
-          var bounds2 = bounds1.clone();
-          bounds1.x = 5;
-          ok(!bounds1.equals(bounds2), "bounds different");
-        })
+        });
 
         test("adding point to untouched bounds makes bounds that point", function() {
           var bounds = new PBounds();

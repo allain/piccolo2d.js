@@ -77,12 +77,16 @@ var PTransform = Class.extend({
   },
 
   transform: function(target) {
-    var m = this.values;
     if (target instanceof PPoint) {
-      return new PPoint(target.x * m[0] + target.y * m[2] + m[4], target.x * m[1] + target.y * m[3] + m[5]);
+      var m = this.values;
+      return new PPoint(target.x * m[0] + target.y * m[2] + m[4], target.x * m[1] + target.y * m[3] + m[5])
     } else if (target instanceof PBounds) {
-      var tPos = this.transform(new PPoint(target.x, target.y));
-      var tBottomRight = this.transform(new PPoint(target.x + target.width, target.y + target.height));
+      var topLeft = new PPoint(target.x, target.y);
+      var tPos = this.transform(topLeft);
+
+      var bottomRight = new PPoint(target.x + target.width, target.y + target.height);
+      var tBottomRight = this.transform(bottomRight);
+
       return new PBounds(
         Math.min(tPos.x, tBottomRight.x),
         Math.min(tPos.y, tBottomRight.y),
@@ -114,7 +118,7 @@ var PTransform = Class.extend({
 PTransform.lerp = function (t1, t2, zeroToOne) {
   var dest = [];
 
-  for (var i=0; i<6 ;i++) 
+  for (var i=0; i<6 ;i++)
     dest[i] = t1.values[i] + zeroToOne*(t2.values[i]-t1.values[i]);
   
   return new PTransform(dest);
@@ -139,39 +143,31 @@ var PPoint = Class.extend({
 
 var PBounds = Class.extend({
   init: function() {
-    switch (arguments.length) {
-      case 0:
-        this.x = 0;
-        this.y = 0;
-        this.width = 0;
-        this.height = 0;
-        this.touched = false;
-        break;
-      case 1:
-        this.x = arguments[0].x;
-        this.y = arguments[0].y;
-        this.width = arguments[0].width;
-        this.height = arguments[0].height;
-        this.touched = true;
-        break;
-      case 4:
-        this.x = arguments[0];
-        this.y = arguments[1];
-        this.width = arguments[2];
-        this.height = arguments[3];
-        this.touched = true;
-        break;
-      default:
-        throw "Invalid arguments to PBounds Constructor";
+    if (arguments.length == 0) {
+      this.x = 0;
+      this.y = 0;
+      this.width = 0;
+      this.height = 0;
+      this.touched = false;
+    } else if (arguments.length == 1) {
+      this.x = arguments[0].x;
+      this.y = arguments[0].y;
+      this.width = arguments[0].width;
+      this.height = arguments[0].height;
+      this.touched = true;
+    } else if (arguments.length == 4) {
+      this.x = arguments[0];
+      this.y = arguments[1];
+      this.width = arguments[2];
+      this.height = arguments[3];
+      this.touched = true;
+    } else {
+      throw "Invalid arguments to PBounds Constructor";
     }
   },
 
   equals: function (bounds) {
-    return bounds.x == this.x && bounds.y == this.y && bounds.width == this.width && bounds.height == this.height;       
-  },
-
-  clone: function() {
-    return new PBounds(this); 
+    return bounds.x == this.x && bounds.y == this.y && bounds.width == this.width && bounds.height == this.height;
   },
 
   isEmpty: function() {
@@ -179,21 +175,23 @@ var PBounds = Class.extend({
   },
 
   add: function() {
+    var x, y, width, height;
+
     if (arguments.length == 1) {
-      var x = arguments[0].x;
-      var y = arguments[0].y;
-      var width = arguments[0].width ? arguments[0].width : 0;
-      var height = arguments[0].height ? arguments[0].height : 0;
+      x = arguments[0].x;
+      y = arguments[0].y;
+      width = arguments[0].width ? arguments[0].width : 0;
+      height = arguments[0].height ? arguments[0].height : 0;
     } else if (arguments.length == 2) {
-      var x = arguments[0];
-      var y = arguments[1];
-      var width = 0;
-      var height = 0;
+      x = arguments[0];
+      y = arguments[1];
+      width = 0;
+      height = 0;
     } else if (arguments.length == 4) {
-      var x = arguments[0];
-      var y = arguments[1];
-      var width = arguments[2];
-      var height = arguments[3];
+      x = arguments[0];
+      y = arguments[1];
+      width = arguments[2];
+      height = arguments[3];
     } else {
       throw "invalid arguments to PBounds.add";
     }
@@ -245,10 +243,10 @@ var PNode = Class.extend({
     this.listeners = [];
     this.bounds = new PBounds();
     this.fullBounds = null;
-    this.fillStyle = null;            
+    this.fillStyle = null;
     this.transform = new PTransform();
-    this.visible = true;                
-    this.invalidPaint = true;    
+    this.visible = true;
+    this.invalidPaint = true;
 
     if (params) {
       if (params.fillStyle)
@@ -269,14 +267,14 @@ var PNode = Class.extend({
   },
   
   paintAfterChildren: function (ctx) {
-  },    
+  },
   
   fullPaint: function(ctx) {
     if (this.visible) { //TODO: fullIntersects(paintContext.getLocalClip())) {
       ctx.save();
       this.transform.applyTo(ctx);
       
-      this.paint(ctx);     
+      this.paint(ctx);
 
       for (var i=0; i<this.children.length; i++) {
         this.children[i].fullPaint(ctx);
@@ -346,7 +344,7 @@ var PNode = Class.extend({
     if (this.fullBounds)
       return this.fullBounds;
 
-    this.fullBounds = this.bounds.clone();
+    this.fullBounds = new PBounds(this.bounds);
     
     for (var i=0; i<this.children.length; i++) {
       var child = this.children[i];
@@ -454,15 +452,15 @@ var PImage = PNode.extend({
 
     this.loaded = false;
 
-    this.image = new Image();    
+    this.image = new Image();
     this.image.onload = function() {
       this.loaded = true;
     }
     
     this.image.src = this.url;
-  },   
+  },
  
-  paint: function (ctx) {   
+  paint: function (ctx) {
     if (this.loaded)
       ctx.drawImage(this.image, 0, 0);
   }
@@ -637,22 +635,13 @@ var PCanvas = Class.extend({
     }
     
     //TODO: Remove jQuery dependence
-    $(canvas).click(function(event) {
-      processMouseEvent("click", event);
+    var $canvas = $(canvas);
+    ["click", "mousemove", "mousedown", "mouseup"].forEach(function(name) {
+      $canvas[name](function(event){
+        processMouseEvent(name, event);
+      });
     });
-
-    $(canvas).mousemove(function(event) {
-      processMouseEvent("mousemove", event);
-    });
-
-    $(canvas).mousedown(function(event) {
-      processMouseEvent("mousedown", event);
-    });
-
-    $(canvas).mouseup(function(event) {
-      processMouseEvent("mouseup", event);
-    });
-
+    
     $(canvas).mouseout(function(event) {
       dispatchEvent("mouseout", event, previousPickedNodes);
       previousPickedNodes = [];
@@ -707,7 +696,7 @@ var PInterpolatingActivity = PActivity.extend({
       if (options.duration)
         this.duration = options.duration;
     }
-  },  
+  },
 
   step: function(ellapsedMillis) {
     if (ellapsedMillis >= this.duration)
@@ -767,7 +756,7 @@ var PActivityScheduler = Class.extend({
       this._stop();
   },
   
-  _start: function() {    
+  _start: function() {
     if (!this.intervalID) {
       var _this = this;
       this.intervalID = setInterval(function() {
@@ -797,10 +786,10 @@ var PTransformActivity = PInterpolatingActivity.extend({
   interpolate: function(zeroToOne) {
     var dest = PTransform.lerp(this.source, this.target, zeroToOne);
     
-    this.node.setTransform(dest);       
+    this.node.setTransform(dest);
   },
   
-  finished: function() {    
+  finished: function() {
     this.node.setTransform(this.target);
   }
 });
