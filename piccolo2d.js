@@ -1,7 +1,7 @@
 "use strict";
 
 Array.prototype.pushAll = function (x) {
-    for (var i = 0; i < x.length; i++) {
+    for (var i = 0; i < x.length; i += 1) {
         this.push(x[i]);
     }
 };
@@ -9,7 +9,7 @@ Array.prototype.pushAll = function (x) {
 Array.prototype.remove = function (x) {
     var keepers = [];
 
-    for (var i = 0; i < this.length; i++) {
+    for (var i = 0; i < this.length; i += 1) {
         if (this[i] !== x) {
             keepers.push(this[i]);
         }
@@ -18,14 +18,19 @@ Array.prototype.remove = function (x) {
     return keepers;
 };
 
-(function (global) {
-    var min = Math.min;
-    var max = Math.max;
-    var abs = Math.abs;
-    var sin = Math.sin;
-    var cos = Math.cos;
+// Explicitly declaring classes introduced into the Global Scope
+var PTransform, PBounds, PPoint, PActivity, PActivityScheduler, PRoot,
+    PNode, PText, PImage, PInterpolatingActivity, PViewTransformActivity, 
+    PTransformActivity, PLayer, PCanvas, PCamera;
 
-    global.PTransform = Class.extend({
+(function () {
+    var min = Math.min,
+        max = Math.max,
+        abs = Math.abs,
+        sin = Math.sin,
+        cos = Math.cos;
+
+    PTransform = Class.extend({
         init: function (values) {
             this.values = values || [1, 0, 0, 1, 0, 0];
         },
@@ -45,8 +50,8 @@ Array.prototype.remove = function (x) {
         },
 
         rotate: function (theta) {
-            var c = cos(theta);
-            var s = sin(theta);
+            var c = cos(theta),
+                s = sin(theta);
 
             this.transformBy([c, s, -s, c, 0, 0]);
 
@@ -54,21 +59,21 @@ Array.prototype.remove = function (x) {
         },
 
         transformBy: function (t2) {
-            var m1 = this.values;
-            var m2 = t2;
+            var m1 = this.values,
+                m2 = t2;
 
-            if (t2 instanceof global.PTransform) {
+            if (t2 instanceof PTransform) {
                 m2 = t2.values;
             }
 
-            this.values = [
-            m1[0] * m2[0] + m1[2] * m2[1],
-            m1[1] * m2[0] + m1[3] * m2[1],
-            m1[0] * m2[2] + m1[2] * m2[3],
-            m1[1] * m2[2] + m1[3] * m2[3],
-            m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-            m1[1] * m2[4] + m1[3] * m2[5] + m1[5]
-            ];
+            this.values = [];
+
+            this.values[0] = m1[0] * m2[0] + m1[2] * m2[1];
+            this.values[1] = m1[1] * m2[0] + m1[3] * m2[1];
+            this.values[2] = m1[0] * m2[2] + m1[2] * m2[3];
+            this.values[3] = m1[1] * m2[2] + m1[3] * m2[3];
+            this.values[4] = m1[0] * m2[4] + m1[2] * m2[5] + m1[4];
+            this.values[5] = m1[1] * m2[4] + m1[3] * m2[5] + m1[5];
 
             return this;
         },
@@ -79,11 +84,11 @@ Array.prototype.remove = function (x) {
         },
 
         equals: function (t) {
-            if (t instanceof global.PTransform) {
+            if (t instanceof PTransform) {
                 t = t.values;
             }
 
-            for (var i = 0; i < 6; i++) {
+            for (var i = 0; i < 6; i += 1) {
                 if (t[i] !== this.values[i]) {
                     return false;
                 }
@@ -93,24 +98,23 @@ Array.prototype.remove = function (x) {
         },
 
         transform: function (target) {
-            if (target instanceof global.PPoint) {
+            if (target instanceof PPoint) {
                 var m = this.values;
-                return new global.PPoint(target.x * m[0] + target.y * m[2] + m[4], target.x * m[1] + target.y * m[3] + m[5]);
-            } else if (target instanceof global.PBounds) {
-                var topLeft = new global.PPoint(target.x, target.y);
-                var tPos = this.transform(topLeft);
+                return new PPoint(target.x * m[0] + target.y * m[2] + m[4], target.x * m[1] + target.y * m[3] + m[5]);
+            } else if (target instanceof PBounds) {
+                var topLeft = new PPoint(target.x, target.y),
+                    tPos = this.transform(topLeft),
+                    bottomRight = new PPoint(target.x + target.width, target.y + target.height),
+                    tBottomRight = this.transform(bottomRight);
 
-                var bottomRight = new global.PPoint(target.x + target.width, target.y + target.height);
-                var tBottomRight = this.transform(bottomRight);
-
-                return new global.PBounds(
+                return new PBounds(
                     min(tPos.x, tBottomRight.x),
                     min(tPos.y, tBottomRight.y),
                     abs(tPos.x - tBottomRight.x),
                     abs(tPos.y - tBottomRight.y)
                     );
-            } else if (target instanceof global.PTransform) {
-                var transform = new global.PTransform(this.values);
+            } else if (target instanceof PTransform) {
+                var transform = new PTransform(this.values);
                 transform.transformBy(target);
                 return transform;
             }
@@ -120,34 +124,37 @@ Array.prototype.remove = function (x) {
 
         /** Returns the inverse matrix for this Transform */
         getInverse: function () {
-            var m = this.values;
+            var m = this.values,
+                det = m[0] * m[3] - m[1] * m[2],
+                values = [];
 
-            var det = m[0] * m[3] - m[1] * m[2];
+            values[0] = m[3] / det;
+            values[1] = -m[1] / det;
+            values[2] = -m[2] / det;
+            values[3] =  m[0] / det;
+            values[4] = (m[2] * m[5] - m[3] * m[4]) / det;
+            values[5] = -(m[0] * m[5] - m[1] * m[4]) / det;
 
-            return new global.PTransform([
-                m[3] / det, -m[1] / det,
-                -m[2] / det, m[0] / det,
-                (m[2] * m[5] - m[3] * m[4]) / det,
-                -(m[0] * m[5] - m[1] * m[4]) / det]);
+            return new PTransform(values);
         }
     });
 
-    global.PTransform.lerp = function (t1, t2, zeroToOne) {
+    PTransform.lerp = function (t1, t2, zeroToOne) {
         var dest = [];
 
-        for (var i = 0; i < 6 ; i++) {
+        for (var i = 0; i < 6 ; i += 1) {
             dest[i] = t1.values[i] + zeroToOne * (t2.values[i] - t1.values[i]);
         }
 
-        return new global.PTransform(dest);
+        return new PTransform(dest);
     };
 
-    global.PPoint = Class.extend({
+    PPoint = Class.extend({
         init: function () {
             if (arguments.length === 0) {
                 this.x = 0;
                 this.y = 0;
-            } else if (arguments.length === 1 && arguments[0] instanceof global.PPoint) {
+            } else if (arguments.length === 1 && arguments[0] instanceof PPoint) {
                 this.x = arguments[0].x;
                 this.y = arguments[0].y;
             } else if (arguments.length === 2) {
@@ -159,7 +166,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PBounds = Class.extend({
+    PBounds = Class.extend({
         init: function () {
             if (arguments.length === 1) {
                 this.x = arguments[0].x;
@@ -201,8 +208,8 @@ Array.prototype.remove = function (x) {
             }
 
             if (this.touched) {
-                var newX = min(x, this.x);
-                var newY = min(y, this.y);
+                var newX = min(x, this.x),
+                    newY = min(y, this.y);
 
                 var newBounds = {
                     x: newX,
@@ -241,22 +248,22 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PNode = Class.extend({
+    PNode = Class.extend({
         init: function (params) {
             this.parent = null;
             this.children = [];
             this.listeners = [];
             this.fullBounds = null;
       
-            this.transform = new global.PTransform();
+            this.transform = new PTransform();
             this.visible = true;
             this.invalidPaint = true;
 
             if (params) {
                 this.fillStyle = params.fillStyle || null;
-                this.bounds = params.bounds || new global.PBounds();
+                this.bounds = params.bounds || new PBounds();
             } else {
-                this.bounds = new global.PBounds();
+                this.bounds = new PBounds();
                 this.fillStyle = null;
             }
         },
@@ -282,7 +289,7 @@ Array.prototype.remove = function (x) {
 
             this.paint(ctx);
 
-            for (var i = 0; i < this.children.length; i++) {
+            for (var i = 0; i < this.children.length; i += 1) {
                 this.children[i].fullPaint(ctx);
             }
 
@@ -338,7 +345,7 @@ Array.prototype.remove = function (x) {
             if (!duration) {
                 this.transform = transform;
             } else {
-                this.getRoot().scheduler.schedule(new global.PTransformActivity(this, transform, duration));
+                this.getRoot().scheduler.schedule(new PTransformActivity(this, transform, duration));
             }
         },
 
@@ -348,12 +355,15 @@ Array.prototype.remove = function (x) {
 
         getFullBounds: function () {
             if (!this.fullBounds) {
-                this.fullBounds = new global.PBounds(this.bounds);
+                this.fullBounds = new PBounds(this.bounds);
 
-                for (var i = 0; i < this.children.length; i++) {
-                    var child = this.children[i];
-                    var childFullBounds = child.getFullBounds();
-                    var tBounds = child.transform.transform(childFullBounds);
+                var child, childFullBounds, tBounds;
+
+                for (var i = 0; i < this.children.length; i += 1) {
+                    child = this.children[i];
+                    childFullBounds = child.getFullBounds();
+                    tBounds = child.transform.transform(childFullBounds);
+
                     this.fullBounds.add(tBounds);
                 }
             }
@@ -362,11 +372,10 @@ Array.prototype.remove = function (x) {
         },
 
         getGlobalFullBounds: function () {
-            var fullBounds = this.getFullBounds();
-            var currentNode = this;
-
-            var tl = new global.PPoint(fullBounds.x, fullBounds.y);
-            var br = new global.PPoint(fullBounds.x + fullBounds.width, fullBounds.y + fullBounds.height);
+            var fullBounds = this.getFullBounds(),
+                currentNode = this,
+                tl = new PPoint(fullBounds.x, fullBounds.y),
+                br = new PPoint(fullBounds.x + fullBounds.width, fullBounds.y + fullBounds.height);
 
             while (currentNode.parent) {
                 tl = currentNode.transform.transform(tl);
@@ -374,7 +383,7 @@ Array.prototype.remove = function (x) {
                 currentNode = currentNode.parent;
             }
 
-            return new global.PBounds(
+            return new PBounds(
                 min(tl.x, br.x),
                 min(tl.y, br.y),
                 abs(tl.x - br.x),
@@ -383,9 +392,8 @@ Array.prototype.remove = function (x) {
         },
 
         getGlobalTransform: function () {
-            var t = new global.PTransform();
-
-            var currentNode = this;
+            var t = new PTransform(),
+                currentNode = this;
 
             while (currentNode.parent) {
                 t = currentNode.transform.transform(t);
@@ -410,11 +418,11 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PRoot = global.PNode.extend({
+    PRoot = PNode.extend({
         init: function (args) {
             this._super(args);
 
-            this.scheduler = new global.PActivityScheduler(50);
+            this.scheduler = new PActivityScheduler(50);
         },
 
         getRoot: function () {
@@ -422,7 +430,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PText = global.PNode.extend({
+    PText = PNode.extend({
         init: function (arg) {
             if (typeof arg === "string") {
                 this._super();
@@ -446,7 +454,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PImage = global.PNode.extend({
+    PImage = PNode.extend({
         init: function (arg) {
             if (typeof arg === "string") {
                 this.url = arg;
@@ -473,7 +481,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PLayer = global.PNode.extend({
+    PLayer = PNode.extend({
         init: function (arg) {
             this._super(arg);
 
@@ -493,12 +501,12 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PCamera = PNode.extend({
+    PCamera = PNode.extend({
         init: function () {
             this._super();
             this.layers = [];
 
-            this.viewTransform = new global.PTransform();
+            this.viewTransform = new PTransform();
         },
 
         paint: function (ctx) {
@@ -508,7 +516,7 @@ Array.prototype.remove = function (x) {
 
             this.viewTransform.applyTo(ctx);
 
-            for (var i = 0; i < this.layers.length; i++) {
+            for (var i = 0; i < this.layers.length; i += 1) {
                 this.layers[i].fullPaint(ctx);
             }
 
@@ -528,12 +536,14 @@ Array.prototype.remove = function (x) {
         },
 
         getPickedNodes: function (x, y) {
-            var viewInverse = this.viewTransform.getInverse();
-            var globalPoint = viewInverse.transform(new global.PPoint(x,y));
-
-            var pickedNodes = [];
-            for (var i = 0; i < this.layers.length; i++) {
-                var layerPoint = this.layers[i].transform.getInverse().transform(globalPoint);
+            var viewInverse = this.viewTransform.getInverse(),
+                mousePoint = new PPoint(x, y),
+                globalPoint = viewInverse.transform(mousePoint),
+                pickedNodes = [],
+                layerPoint;
+                
+            for (var i = 0; i < this.layers.length; i += 1) {
+                layerPoint = this.layers[i].transform.getInverse().transform(globalPoint);
                 pickedNodes.pushAll(this._getPickedNodes(this.layers[i], layerPoint));
             }
 
@@ -541,14 +551,15 @@ Array.prototype.remove = function (x) {
         },
 
         _getPickedNodes: function (parent, parentPoint) {
-            var pickedChildren = [];
+            var pickedChildren = [],
+                childBounds,
+                childPoint;
 
-            for (var i = 0; i < parent.children.length; i++) {
-                var childBounds = parent.children[i].getFullBounds();
-                var childPoint = parent.children[i].parentToLocal(parentPoint);
+            for (var i = 0; i < parent.children.length; i += 1) {
+                childBounds = parent.children[i].getFullBounds();
+                childPoint = parent.children[i].parentToLocal(parentPoint);
                 if (childBounds.contains(childPoint)) {
-                    var picked = this._getPickedNodes(parent.children[i], childPoint);
-                    pickedChildren.pushAll(picked);
+                    pickedChildren.pushAll(this._getPickedNodes(parent.children[i], childPoint));
                 }
             }
 
@@ -556,7 +567,7 @@ Array.prototype.remove = function (x) {
         },
 
         animateViewToTransform: function (transform, duration) {
-            this.getRoot().scheduler.schedule(new global.PViewTransformActivity(this, transform, duration));
+            this.getRoot().scheduler.schedule(new PViewTransformActivity(this, transform, duration));
         },
 
         setViewTransform: function (transform) {
@@ -565,7 +576,7 @@ Array.prototype.remove = function (x) {
 
     });
 
-    global.PCanvas = Class.extend({
+    PCanvas = Class.extend({
         init: function (canvas, root) {
             if (typeof canvas === "string") {
                 canvas = document.getElementById(canvas);
@@ -577,27 +588,29 @@ Array.prototype.remove = function (x) {
 
             var _pCanvas = this;
             this.canvas = canvas;
-            this.root =  root || new global.PRoot();
-            this.camera = new global.PCamera();
-            this.camera.bounds = new global.PBounds(0, 0, canvas.width, canvas.height);
+            this.root =  root || new PRoot();
+            this.camera = new PCamera();
+            this.camera.bounds = new PBounds(0, 0, canvas.width, canvas.height);
 
-            var layer = new global.PLayer();
+            var layer = new PLayer();
             this.root.addChild(layer);
             this.root.addChild(this.camera);
             this.camera.addLayer(layer);
 
-            this.camera.getRoot().scheduler.schedule(new global.PActivity({
+            this.camera.getRoot().scheduler.schedule(new PActivity({
                 step: function () {
                     _pCanvas.paint();
                 }
             }));
 
             function dispatchEvent(type, event, pickedNodes) {
-                for (var nodeIndex  = 0; nodeIndex < pickedNodes.length; nodeIndex++) {
-                    var currentNode = pickedNodes[nodeIndex];
+                var currentNode, listener;
+
+                for (var nodeIndex  = 0; nodeIndex < pickedNodes.length; nodeIndex += 1) {
+                    currentNode = pickedNodes[nodeIndex];
                     while (currentNode) {
-                        for (var i = 0; i < currentNode.listeners.length; i++) {
-                            var listener = currentNode.listeners[i];
+                        for (var i = 0; i < currentNode.listeners.length; i += 1) {
+                            listener = currentNode.listeners[i];
                             if (listener[type]) {
                                 listener[type]({
                                     "event": event,
@@ -615,7 +628,7 @@ Array.prototype.remove = function (x) {
             function subtract(a, b) {
                 var aminusb = [];
 
-                for (var i = 0; i < a.length; i++) {
+                for (var i = 0; i < a.length; i += 1) {
                     if (b.indexOf(a[i]) === -1) {
                         aminusb.push(a[i]);
                     }
@@ -625,19 +638,18 @@ Array.prototype.remove = function (x) {
             }
 
             function processMouseOvers(oldNodes, newNodes, event) {
-                var mouseOutNodes = subtract(oldNodes, newNodes);
-                dispatchEvent("mouseout", event, mouseOutNodes);
+                var mouseOutNodes = subtract(oldNodes, newNodes),
+                    mouseOverNodes = subtract(newNodes, oldNodes);
 
-                var mouseOverNodes = subtract(newNodes, oldNodes);
+                dispatchEvent("mouseout", event, mouseOutNodes);
                 dispatchEvent("mouseover", event, mouseOverNodes);
             }
 
             function processMouseEvent(name, event) {
-                var offset = $(canvas).offset();
-                var x = event.pageX - offset.left;
-                var y = event.pageY - offset.top;
-
-                var newPickedNodes = _pCanvas.getPickedNodes(x, y);
+                var offset = $(canvas).offset(),
+                    x = event.pageX - offset.left,
+                    y = event.pageY - offset.top,
+                    newPickedNodes = _pCanvas.getPickedNodes(x, y);
 
                 processMouseOvers(previousPickedNodes, newPickedNodes, event);
 
@@ -647,6 +659,7 @@ Array.prototype.remove = function (x) {
 
             //TODO: Remove jQuery dependence
             var $canvas = $(canvas);
+            
             ["click", "mousemove", "mousedown", "mouseup"].forEach(function (name) {
                 $canvas[name](function (event) {
                     processMouseEvent(name, event);
@@ -661,19 +674,19 @@ Array.prototype.remove = function (x) {
 
         paint: function () {
             var ctx = this.canvas.getContext('2d');
-            ctx.font="16pt Helvetica";
-            ctx.fillStyle="rgb(255,255,255)";
+            ctx.font = "16pt Helvetica";
+            ctx.fillStyle = "rgb(255,255,255)";
             ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
             this.camera.fullPaint(ctx);
         },
 
-        getPickedNodes: function(x, y) {
+        getPickedNodes: function (x, y) {
             return this.camera.getPickedNodes(x, y);
         }
     });
 
-    global.PActivity = Class.extend({
+    PActivity = Class.extend({
         init: function (options) {
             this.stepping = false;
             if (typeof options !== "undefined") {
@@ -705,7 +718,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PInterpolatingActivity = PActivity.extend({
+    PInterpolatingActivity = PActivity.extend({
         init: function (options) {
             this.stepping = false;
             if (typeof options !== "undefined") {
@@ -722,7 +735,7 @@ Array.prototype.remove = function (x) {
                 return false;
             }
 
-            this.interpolate(ellapsedMillis/this.duration);
+            this.interpolate(ellapsedMillis / this.duration);
 
             return true;
         },
@@ -732,7 +745,7 @@ Array.prototype.remove = function (x) {
 
     });
 
-    global.PActivityScheduler = Class.extend({
+    PActivityScheduler = Class.extend({
         init: function (frameRate) {
             this.pollingRate = frameRate;
             this.nextCallTime = 0;
@@ -749,11 +762,12 @@ Array.prototype.remove = function (x) {
         },
 
         step: function () {
-            this.globalTime = new Date().getTime();
-            var keepers = [];
+            var activity, keepers = [];
 
-            for (var i=0; i<this.activities.length; i++) {
-                var activity = this.activities[i];
+            this.globalTime = new Date().getTime();
+            
+            for (var i = 0; i < this.activities.length; i += 1) {
+                activity = this.activities[i];
 
                 if (activity.startTime > this.globalTime) {
                     keepers.push(activity);
@@ -781,7 +795,7 @@ Array.prototype.remove = function (x) {
         _start: function () {
             if (!this.intervalID) {
                 var _this = this;
-                this.intervalID = setInterval(function() {
+                this.intervalID = setInterval(function () {
                     _this.currentTime = new Date().getTime();
                     _this.step();
                 }, this.pollingRate);
@@ -796,7 +810,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PTransformActivity = global.PInterpolatingActivity.extend({
+    PTransformActivity = PInterpolatingActivity.extend({
         init: function (node, targetTransform, duration) {
             this._super();
             this.duration = duration;
@@ -816,7 +830,7 @@ Array.prototype.remove = function (x) {
         }
     });
 
-    global.PViewTransformActivity = PInterpolatingActivity.extend({
+    PViewTransformActivity = PInterpolatingActivity.extend({
         init: function (camera, targetTransform, duration) {
             this._super();
             this.duration = duration;
@@ -834,4 +848,4 @@ Array.prototype.remove = function (x) {
             this.camera.setViewTransform(this.target);
         }
     });
-})(this);
+})();
