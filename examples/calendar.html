@@ -36,7 +36,7 @@
                         fillStyle: number ? "rgb(255, 255, 255)" : "rgb(200, 200, 200)"
                     });
                     
-                    this.addChild(new PText("" + number).scale(5));
+                    this.addChild(new PText("" + number).scale(5).translate(10, 10));
                 },
 
                 paintAfterChildren: function (ctx) {
@@ -64,7 +64,7 @@
                     this.lastDay.setYear(year);
                     this.lastDay.setDate(-1);
 
-                    this.addChild(new PText(Month.monthNames[month]).scale(2));
+                    this.addChild(new PText(Month.monthNames[month]).scale(2).translate(5, 5));
 
                     var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
                     for (var i = 0; i < dayNames.length; i += 1) {
@@ -75,10 +75,10 @@
 
                     var daysInMonth = this.lastDay.getDate() - this.firstDay.getDate();
 
-                    var columnNumber = 0;
+                    var columnNumber = Math.abs(dayOfWeek);
                     var currentY = 70;
 
-                    var currentDay = -dayOfWeek;
+                    var currentDay = 0;
                     while (currentDay < daysInMonth) {
                         var dayLabel = currentDay < 0 ? "" : (currentDay + 1);
                         this.addChild(new Day(dayLabel).translate(columnNumber*columnWidth, currentY).scale(0.2));
@@ -99,12 +99,16 @@
             Month.monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
             for (var monthIndex = 0; monthIndex < 12; monthIndex ++) {
-                layer.addChild(new Month(2010, monthIndex).scale(0.25).translate(10 + (monthIndex % 4)* 160, 10 + ((monthIndex - (monthIndex % 4))/4)*160));
+                var monthX = 10 + (monthIndex % 4)* 160;
+                var monthY = 10 + ((monthIndex - (monthIndex % 4))/4)*160;
+
+                layer.addChild(new Month(2010, monthIndex).scale(0.25).translate(monthX, monthY));
             }
             
             
             layer.addListener({
                 lastFocus: null,
+
                 click: function(event) {
                     var newFocus;
 
@@ -117,11 +121,26 @@
                         newFocus = event.pickedNodes[0];
                     }
 
+                    if (this.lastFocus === newFocus) {
+                        newFocus = this.logicalParentOf(newFocus);
+                    }
+
                     this.lastFocus = newFocus;
                     var globalTransform = newFocus.getGlobalTransform();
                     var inverse = globalTransform.getInverse();
-
                     camera.animateViewToTransform(inverse, 500);
+                },
+
+                logicalParentOf: function(node) {
+                    if (node instanceof PLayer) {
+                        return node;
+                    }
+                    
+                    do {
+                        node = node.parent;
+                    } while (!(node instanceof Month || node instanceof PLayer));
+
+                    return node;
                 }
             });
         }
