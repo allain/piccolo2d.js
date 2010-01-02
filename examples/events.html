@@ -14,15 +14,15 @@
   <script type="text/javascript" src="../piccolo2d.js"></script>
   <script type="text/javascript">
     // To deal with the case where firebug's console is not available'
-    if (typeof console == "undefined")
+    if (typeof console == "undefined") {
       console = {log: function() {}};
+    }
 
     var pCanvas = new PCanvas('canvas');
 
     with ({
       camera: pCanvas.camera,
-      layer : pCanvas.camera.layers[0],
-      scheduler: pCanvas.camera.getRoot().scheduler
+      layer : pCanvas.camera.layers[0]
     }) {
       var ZoomNode = PNode.extend({
         paintAfterChildren: function(ctx) {

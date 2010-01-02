@@ -1,3 +1,5 @@
+/*jslint white: true, browser: true, devel: true, undef: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, strict: true, newcap: true */
+
 "use strict";
 
 Array.prototype.pushAll = function (x) {
@@ -675,8 +677,9 @@ var PTransform, PBounds, PPoint, PActivity, PActivityScheduler, PRoot,
         paint: function () {
             var ctx = this.canvas.getContext('2d');
             ctx.font = "16pt Helvetica";
-            ctx.fillStyle = "rgb(255,255,255)";
-            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.fillStyle = this.fillStyle || "rgb(255,255,255)";
+            
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
             this.camera.fullPaint(ctx);
         },
