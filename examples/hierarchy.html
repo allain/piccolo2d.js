@@ -1,59 +1,101 @@
+<!--
+Copyright (c) 2008-2009, Piccolo2D project, http://piccolo2d.org
+Copyright (c) 1998-2008, University of Maryland
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided
+that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+and the following disclaimer in the documentation and/or other materials provided with the
+distribution.
+
+None of the name of the University of Maryland, the name of the Piccolo2D project, or the names of its
+contributors may be used to endorse or promote products derived from this software without specific
+prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
 <html>
-  <head>
-    <title>Hierarchy Example - Piccolo2d.js</title>
-    <link rel="stylesheet" href="examples.css" />
-  </head>
-  <body>
-  <canvas id="canvas" width="400" height="400">
+<head>
+  <title>Hierarchy Example - Piccolo2d.js</title>
+  <link rel="stylesheet" href="examples.css"/>
+</head>
+<body>
+<div id="container">
+  <a href="index.html">&laquo;Back to Examples List</a>
+
+  <h1>Hierarchy Example</h1>
+
+  <p>Demonstrates rounding error involved at high magnifications.</p>
+
+  <p>This example contains:</p>
+  <ul>
+    <li>30 300x300 squares nested within each other</li>
+    <li>Each child is 10% the size of its parent.</li>
+    <li>This scene contains <span id="totalNodeCount">???</span> Nodes</li>
+  </ul>
+
+  <p>Camera Scale: <strong>x<span id="cameraScale">1</span></strong></p>
+  <canvas id="canvas" width="954" height="400">
     <p>No Canvas Support in this browser.</p>
   </canvas>
-  <script type="text/javascript" src="../lib/javascript-1.6.js"></script>
-  <script type="text/javascript" src="../lib/jquery-1.3.2.min.js"></script>
-  <script type="text/javascript" src="../extends.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script type="text/javascript" src="../piccolo2d.js"></script>
-  <script type="text/javascript">
-    // To deal with the case where firebug's console is not available'
-    if (typeof console == "undefined")
-      console = {log: function() {}};
-
+  <script type="text/javascript" src="examples.js"></script>
+  <script type="text/javascript" id="example">
     // Example usage
     var pCanvas = new PCanvas(document.getElementById('canvas'));
 
-    with ({
-      camera: pCanvas.camera,
-      layer : pCanvas.camera.layers[0],
-      scheduler: pCanvas.camera.getRoot().scheduler
-    }) {            
-      var parent = layer;
-      
-      for (var i=0; i<100; i++) {
-        var randomColor = "rgb("+(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) +")";
+    var camera = pCanvas.camera;
+    var layer = pCanvas.camera.layers[0];
+    var scheduler = pCanvas.camera.getRoot().scheduler;
+    var parent = layer;
+    var displayScale = 1;
 
-        var newChild = new PNode({
-          fillStyle: randomColor,
-          bounds: new PBounds(0, 0, 200, 200)
-        }).scale(0.8);
+    for (var i = 0; i < 30; i++) {
+      var newChild = new PNode({
+        fillStyle: randomCSSColor(),
+        bounds: new PBounds(0, 0, 300, 300)
+      }).scale(0.1).translate(135, 135);
 
-        parent.addChild(newChild);
-        parent = newChild;
-      }
+      newChild.displayScale = displayScale;
 
-      parent.addChild(new PText("That's all folks"));
-      
-      var step = 0;
-      scheduler.schedule(new PActivity({
-        step: function() {
-          layer.scale(1.05);
-          return true;
-        }
-      }));
+      displayScale *= 10;
+
+      parent.addChild(newChild);
+      parent = newChild;
     }
+
+    var lastNode = new PText("That's all folks");
+    lastNode.displayScale = displayScale;
+    parent.addChild(lastNode);
+
+    layer.children[0].translate(-135, -135).scale(10);
+
+    layer.addListener({
+      click: function (event) {
+        var clickedNode = event.pickedNodes[0];
+        var globalTransform = clickedNode.getGlobalTransform();
+        var focusBounds = clickedNode.getGlobalFullBounds();
+        var inverse = globalTransform.getInverse();
+
+        $("#cameraScale").text("" + (clickedNode.displayScale || 1));
+        camera.animateViewToTransform(inverse, 500);
+      }
+    });
   </script>
-  <h1>Hierarchy Example</h1>
-  <p>This example contains:</p>
-  <ul>
-    <li>100 200x200 squares nested as a chain of 100 squares, each child is 80% the size of its parent.</li>
-    <li>A scaling of the camera by 260% every second.</li>
-  </ul>
+
+</div>
 </body>
 </html>

@@ -1,69 +1,89 @@
+<!--
+Copyright (c) 2008-2009, Piccolo2D project, http://piccolo2d.org
+Copyright (c) 1998-2008, University of Maryland
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided
+that the following conditions are met:
+
+Redistributions of source code must retain the above copyright notice, this list of conditions
+and the following disclaimer.
+
+Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+and the following disclaimer in the documentation and/or other materials provided with the
+distribution.
+
+None of the name of the University of Maryland, the name of the Piccolo2D project, or the names of its
+contributors may be used to endorse or promote products derived from this software without specific
+prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR
+TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
 <html>
-  <head>
-    <title>Activities Example - Piccolo2d.js</title>
-    <link rel="stylesheet" href="examples.css" />
-  </head>
-  <body>
+<head>
+  <title>Activities Example - Piccolo2d.js</title>
+  <link rel="stylesheet" href="examples.css"/>
+</head>
+<body>
+<div id="container">
+  <a href="index.html">&laquo;Back to Examples List</a>
+
+  <h1>Activity Example</h1>
+
+  <p>This example contains:</p>
+  <ul>
+    <li><strong>1000</strong> Rectangles being scheduled every 1.5 seconds for 1 second.</li>
+    <li><strong id="totalNodeCount">???</strong> total nodes in the scene.</li>
+  </ul>
+
   <canvas id="canvas" width="400" height="400">
     <p>No Canvas Support in this browser.</p>
   </canvas>
-  <script type="text/javascript" src="../lib/javascript-1.6.js"></script>
-  <script type="text/javascript" src="../lib/jquery-1.3.2.min.js"></script>
-  <script type="text/javascript" src="../extends.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
   <script type="text/javascript" src="../piccolo2d.js"></script>
-  <script type="text/javascript">
-    // To deal with the case where firebug's console is not available'
-    if (typeof console == "undefined")
-      console = {log: function() {}};
+  <script type="text/javascript" src="examples.js"></script>
 
-    // Example usage
+  <script type="text/javascript" id="example">
     var pCanvas = new PCanvas(document.getElementById('canvas'));
 
-    with ({
-      camera: pCanvas.camera,
-      layer : pCanvas.camera.layers[0],
-      scheduler: pCanvas.camera.getRoot().scheduler
-    }) {            
-      var squareContainer = new PNode({
-        fillStyle: "rgb(200, 200, 200)",
-        bounds: new PBounds(0, 0, 400, 400)
-      })
-      
-      for (var i=0; i<100; i++) {
-        var randomColor = "rgb("+(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) + "," +(Math.round(Math.random()*254)) +")";
-        squareContainer.addChild(new PNode({
-          fillStyle: randomColor,
-          bounds: new PBounds(0, 0, 10, 10)
-        }));
-      }
-      layer.addChild(squareContainer);
+    var camera = pCanvas.camera;
+    var layer = pCanvas.camera.layers[0];
+    var scheduler = pCanvas.camera.getRoot().scheduler;
 
-      var step = 0;
-      scheduler.schedule(new PActivity({
-        init: function() {         
-          this.lastCalled = 0;
-        },
+    var squareContainer = new PNode({
+      fillStyle: "rgb(200, 200, 200)",
+      bounds: new PBounds(0, 0, 400, 400)
+    })
 
-        step: function() {          
-          if (scheduler.globalTime - this.lastCalled > 1500) {
-            for (var i=0; i<squareContainer.children.length; i++) {
-              var x = Math.round(Math.random()* 380) + 10;
-              var y = Math.round(Math.random()* 380) + 10;
-              squareContainer.children[i].animateToTransform(new PTransform().translate(x, y), 1000);
-            }
-            
-            this.lastCalled = scheduler.globalTime;
-          }
-          
-          return true;
-        }
+    for (var i = 0; i < 1000; i++) {
+      squareContainer.addChild(new PNode({
+        fillStyle: randomCSSColor(),
+        bounds: new PBounds(0, 0, 10, 10)
       }));
     }
+    layer.addChild(squareContainer);
+
+    scheduler.schedule(new PActivity({
+      step: function () {
+        if (scheduler.activities.length === 2) {
+          for (var i = 0; i < squareContainer.children.length; i++) {
+            var x = Math.round(Math.random() * 390);
+            var y = Math.round(Math.random() * 390);
+            squareContainer.children[i].animateToTransform(new PTransform().translate(x, y), 1000);
+          }
+        }
+
+        return true;
+      }
+    }));
   </script>
-  <h1>Activity Example</h1>
-  <p>This example contains:</p>
-  <ul>
-    <li>100 Rectangles being scheduled every 1.5 seconds for 1 second.</li>
-  </ul>
+</div>
 </body>
 </html>

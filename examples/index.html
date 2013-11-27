@@ -28,55 +28,45 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 <html>
 <head>
-  <title>Sticky Node Example - Piccolo2d.js</title>
+  <title>Examples - Piccolo2d.js</title>
   <link rel="stylesheet" href="examples.css"/>
 </head>
 <body>
 <div id="container">
-  <a href="index.html">&laquo;Back to Example List</a>
+  <h1>Piccolo2D.js - Examples</h1>
+  <dl>
+    <dt><a href="events.html">Events</a></dt>
+    <dd>
+      <p>Demonstrates: Event Registration</p>
+    </dd>
 
-  <h1>Sticky Node Example</h1>
+    <dt><a href="activities.html">Activities</a></dt>
+    <dd>
+      <p>Demonstrates: Scheduling Activities</p>
+    </dd>
 
-  <p>This example contains:</p>
-  <ul>
-    <li>A node attached to the camera</li>
-    <li>A node attached to the layer</li>
-    <li>An activity that transforms the layer's transform along a sine wave.</li>
-  </ul>
-  <canvas id="canvas" width="600" height="400">
-    <p>No Canvas Support in this browser.</p>
-  </canvas>
-  <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-  <script type="text/javascript" src="../piccolo2d.js"></script>
-  <script type="text/javascript" src="examples.js"></script>
-  <script type="text/javascript" id="example">
-    // Example usage
-    var pCanvas = new PCanvas(document.getElementById('canvas'));
+    <dt><a href="hierarchy.html">Hierarchy</a></dt>
+    <dd>
+      <p>Demonstrates: Very Deeply Nested Nodes</p>
+    </dd>
 
-    with ({
-      camera: pCanvas.camera,
-      layer: pCanvas.camera.layers[0],
-      scheduler: pCanvas.camera.getRoot().scheduler
-    }) {
-      camera.addChild(new PText({
-        text: "Sticky Node",
-        fillStyle: "rgb(255,0,0)"
-      }));
+    <dt><a href="sticky-nodes.html">Sticky Nodes</a></dt>
+    <dd>
+      <p>Demonstrates: activities, sticky nodes</p>
+    </dd>
 
-      var layerNode = new PText("This Node is not being scaled, its PLayer is.").translate(0, 25);
+    <dt><a href="images.html">PImage Example</a></dt>
+    <dd>
+      <p>Demonstrates: creation of PImages</p>
+    </dd>
 
-      layer.addChild(layerNode);
+    <dt><a href="calendar.html">Calendar Example</a></dt>
+    <dd>
+      <p>Example used to benchmark the basic code.</p>
 
-      scheduler.schedule(new PActivity({
-        step: function (ellapsed) {
-          var cos = -Math.cos(ellapsed / 800);
-          layer.setTransform(new PTransform().scale(cos * 2.5 + 3.5).translate(200 + 200 * cos, 0));
-          return true;
-        }
-      }));
-    }
-  </script>
-
+      <p>Demonstrates: events, scene construction</p>
+    </dd>
+  </dl>
 </div>
 </body>
 </html>

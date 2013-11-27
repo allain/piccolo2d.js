@@ -28,22 +28,17 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -->
 <html>
 <head>
-  <title>Sticky Node Example - Piccolo2d.js</title>
+  <title>PImage Examples - Piccolo2d.js</title>
   <link rel="stylesheet" href="examples.css"/>
 </head>
 <body>
 <div id="container">
-  <a href="index.html">&laquo;Back to Example List</a>
+  <a href="index.html">&laquo;Back to Examples List</a>
 
-  <h1>Sticky Node Example</h1>
+  <h1>PImage Example</h1>
 
-  <p>This example contains:</p>
-  <ul>
-    <li>A node attached to the camera</li>
-    <li>A node attached to the layer</li>
-    <li>An activity that transforms the layer's transform along a sine wave.</li>
-  </ul>
-  <canvas id="canvas" width="600" height="400">
+  <p>Demonstrates the use of PImages.</p>
+  <canvas id="canvas" width="954" height="400">
     <p>No Canvas Support in this browser.</p>
   </canvas>
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
@@ -53,28 +48,53 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     // Example usage
     var pCanvas = new PCanvas(document.getElementById('canvas'));
 
-    with ({
-      camera: pCanvas.camera,
-      layer: pCanvas.camera.layers[0],
-      scheduler: pCanvas.camera.getRoot().scheduler
-    }) {
-      camera.addChild(new PText({
-        text: "Sticky Node",
-        fillStyle: "rgb(255,0,0)"
-      }));
+    var camera = pCanvas.camera;
+    var layer = pCanvas.camera.layers[0];
+    var scheduler = pCanvas.camera.getRoot().scheduler;
 
-      var layerNode = new PText("This Node is not being scaled, its PLayer is.").translate(0, 25);
+    var WrappedHorizontalLayoutNode = PNode.subClass({
+      layoutChildren: function () {
+        var currentX = 0;
+        var currentY = 0;
+        var rowHeight = 0;
+        var column = 0;
 
-      layer.addChild(layerNode);
+        var SCALE_RATIO = 0.75;
 
-      scheduler.schedule(new PActivity({
-        step: function (ellapsed) {
-          var cos = -Math.cos(ellapsed / 800);
-          layer.setTransform(new PTransform().scale(cos * 2.5 + 3.5).translate(200 + 200 * cos, 0));
-          return true;
+        for (var i = 0, n = this.children.length; i < n; i++) {
+          this.children[i].translate(currentX, currentY).scale(Math.pow(SCALE_RATIO, column));
+          currentX += this.children[i].bounds.width * Math.pow(SCALE_RATIO, column);
+          rowHeight = this.children[i].bounds.height;
+
+          column += 1;
+          column %= 8;
+
+          if (column == 0) {
+            currentY += rowHeight + 10;
+            currentX = 0;
+            rowHeight = 0;
+          }
         }
-      }));
+      }
+    });
+
+
+    var layout = new WrappedHorizontalLayoutNode();
+    layout.scale(0.5);
+    layer.addChild(layout);
+
+    for (var i = 0; i < 64; i++) {
+      layout.addChild(new PImage("http://www.piccolo2d.org/images/Piccolo2D-Logo-small.png"));
     }
+
+    layer.addListener({
+      click: function (event) {
+        var clickedNode = event.pickedNodes[0];
+        var globalTransform = clickedNode.getGlobalTransform();
+        var inverse = globalTransform.getInverse();
+        camera.animateViewToTransform(inverse, 500);
+      }
+    });
   </script>
 
 </div>
