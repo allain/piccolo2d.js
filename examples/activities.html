@@ -60,7 +60,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     var squareContainer = new PNode({
       fillStyle: "rgb(200, 200, 200)",
       bounds: new PBounds(0, 0, 400, 400)
-    })
+    });
 
     for (var i = 0; i < 1000; i++) {
       squareContainer.addChild(new PNode({
@@ -72,7 +72,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     scheduler.schedule(new PActivity({
       step: function () {
-        if (scheduler.activities.length === 2) {
+        if (scheduler.activities.length === 1) {
           for (var i = 0; i < squareContainer.children.length; i++) {
             var x = Math.round(Math.random() * 390);
             var y = Math.round(Math.random() * 390);
