@@ -58,7 +58,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       date.setMonth(month);
       date.setDate(day);
       return date;
-    }
+    };
 
     var camera = pCanvas.camera;
     var layer = pCanvas.camera.layers[0];
@@ -70,23 +70,35 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     var TaskList = PNode.subClass({
       init: function (tasks) {
         this._super();
-        for (var i = 0; i < tasks.length; i++) {
-          this.addChild(new PText(tasks[i]));
-        }
+        tasks.forEach(function(task) {
+          this.addChild(new PText(task));
+        }.bind(this));
       },
 
       layoutChildren: function () {
-        for (var i = 0, n = this.children.length; i < n; i++) {
-          this.children[i].translate(0, 30 * i);
-        }
+        this.children.forEach(function(child, index) {
+          child.translate(0, 30 * index);
+        });
       }
     });
 
     var Day = PNode.subClass({
       init: function (number, tasks) {
+
+        var color;
+        if (number) {
+          if (tasks.length > 0) {
+            color = "rgb(255,255,255)";
+          } else {
+            color = 'rgb(235, 235, 235)';
+          }
+        } else {
+          color = 'rgb(200, 200, 200)';
+        }
+
         this._super({
           bounds: new PBounds(0, 0, columnWidth * 5, 500),
-          fillStyle: number ? "rgb(255, 255, 255)" : "rgb(200, 200, 200)"
+          fillStyle: color
         });
 
         this.addChild(new PText("" + number).scale(5).translate(10, 10));
@@ -126,9 +138,16 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         var tasks = ["Woot", "Eat more fish", "Testing 1, 2, 3", "Testing Again", "Kilroy was here"];
 
+
         do {
+          var randomTasks = [];
+          var randomCount = Math.floor(Math.random() * tasks.length);
+          for (var i = 0; i < randomCount; i++) {
+            randomTasks.push(tasks[Math.floor(Math.random() * tasks.length)]);
+          }
+
           var dayLabel = (currentDay < 0) ? "" : (currentDay + 1);
-          this.addChild(new Day(dayLabel, tasks).translate(columnNumber++ * columnWidth, currentY).scale(0.2));
+          this.addChild(new Day(dayLabel, randomTasks).translate(columnNumber++ * columnWidth, currentY).scale(0.2));
 
           columnNumber %= 7;
 
