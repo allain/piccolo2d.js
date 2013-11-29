@@ -127,10 +127,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
           this.addChild(new PText(dayNames[i]).translate(i * columnWidth, 50).scale(0.7));
         }
 
-        this.firstDay = Date.build(month, year, 1)
-        this.lastDay = Date.build(month + 1, year, -1)
+        this.firstDay = Date.build(year, month, 1);
+        this.lastDay = Date.build(year, month + 1, 0);
 
-        var daysInMonth = this.lastDay.getDate() - this.firstDay.getDate();
+        var daysInMonth = Math.ceil(this.lastDay.getDate() - this.firstDay.getDate() - 1);
 
         var columnNumber = Math.abs(this.firstDay.getDay());
         var currentY = 70;
@@ -182,7 +182,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         newFocus = event.pickedNodes[0];
         if (this.lastFocus == null || this.lastFocus instanceof PLayer) {
-          while (!(newFocus instanceof Month)) {
+          while (newFocus && !(newFocus instanceof Month)) {
             newFocus = newFocus.parent;
           }
         }
@@ -197,6 +197,9 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         }
 
         if (this.lastFocus !== newFocus) {
+          if (newFocus === null) {
+            newFocus = layer;
+          }
           this.lastFocus = newFocus;
 
           var globalTransform = newFocus.getGlobalTransform();
