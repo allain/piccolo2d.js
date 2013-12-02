@@ -1,0 +1,29 @@
+{
+  "name": "piccolo2d",
+  "version": "0.1.0",
+  "description": "Piccolo2D is a toolkit that supports the development of 2D structured graphics programs, in general, and Zoomable User Interfaces (ZUIs), in particular.",
+  "main": "dist/piccolo2d.min.js",
+  "scripts": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/allain/piccolo2d.js.git"
+  },
+  "keywords": [
+    "JavaScript",
+    "ZUI",
+    "html5"
+  ],
+  "devDependencies": {
+    "grunt-contrib-concat": "*",
+    "grunt-contrib-uglify": "*",
+    "grunt-contrib-jshint": "*",
+    "grunt-contrib-watch": "*"
+  },
+  "author": "Piccolo2D Project",
+  "license": "https://raw.github.com/allain/piccolo2d.js/master/piccolo2d-license.txt",
+  "bugs": {
+    "url": "https://github.com/allain/piccolo2d.js/issues"
+  },
+  "homepage": "https://github.com/allain/piccolo2d.js"
+}

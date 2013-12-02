@@ -38,43 +38,41 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   <h1>Sticky Node Example</h1>
 
   <p>This example contains:</p>
+
   <ul>
     <li>A node attached to the camera</li>
     <li>A node attached to the layer</li>
     <li>An activity that transforms the layer's transform along a sine wave.</li>
   </ul>
+
   <canvas id="canvas" width="600" height="400">
     <p>No Canvas Support in this browser.</p>
   </canvas>
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-  <script type="text/javascript" src="../piccolo2d.js"></script>
+  <script type="text/javascript" src="../dist/piccolo2d.js"></script>
   <script type="text/javascript" src="examples.js"></script>
   <script type="text/javascript" id="example">
     // Example usage
     var pCanvas = new PCanvas(document.getElementById('canvas'));
 
-    with ({
-      camera: pCanvas.camera,
-      layer: pCanvas.camera.layers[0],
-      scheduler: pCanvas.camera.getRoot().scheduler
-    }) {
-      camera.addChild(new PText({
-        text: "Sticky Node",
-        fillStyle: "rgb(255,0,0)"
-      }));
+    var camera = pCanvas.camera;
+    var layer = pCanvas.camera.layers[0];
+    var scheduler = pCanvas.camera.getRoot().scheduler;
 
-      var layerNode = new PText("This Node is not being scaled, its PLayer is.").translate(0, 25);
+    camera.addChild(new PText({
+      text: "Sticky Node",
+      fillStyle: "rgb(255,0,0)"
+    }));
 
-      layer.addChild(layerNode);
+    layer.addChild(new PText("This Node is not being scaled, its PLayer is.").translate(0, 25));
 
-      scheduler.schedule(new PActivity({
-        step: function (ellapsed) {
-          var cos = -Math.cos(ellapsed / 800);
-          layer.setTransform(new PTransform().scale(cos * 2.5 + 3.5).translate(200 + 200 * cos, 0));
-          return true;
-        }
-      }));
-    }
+    scheduler.schedule(new PActivity({
+      step: function (ellapsed) {
+        var cos = -Math.cos(ellapsed / 800);
+        layer.setTransform(new PTransform().scale(cos * 2.5 + 3.5).translate(200 + 200 * cos, 0));
+        return true;
+      }
+    }));
   </script>
 
 </div>

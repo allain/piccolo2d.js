@@ -45,7 +45,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   </canvas>
 
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-  <script type="text/javascript" src="../piccolo2d.js"></script>
+  <script type="text/javascript" src="../dist/piccolo2d.js"></script>
   <script type="text/javascript" src="examples.js"></script>
 
   <script type="text/javascript" id="example">
@@ -160,7 +160,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       },
 
       paintAfterChildren: function (ctx) {
-        ctx.strokeRect(0, 0, this.bounds.width, this.bounds.height);
+        //ctx.strokeRect(0, 0, this.bounds.width, this.bounds.height);
       }
     });
     Month.monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
