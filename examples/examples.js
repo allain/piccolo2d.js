@@ -31,7 +31,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // To deal with the case where firebug's console is not available'
 if (typeof console === "undefined") {
-    console = {log: function() {}};
+    console = {log: function(msg) {}};
 }
 
 function randomCSSColor() {

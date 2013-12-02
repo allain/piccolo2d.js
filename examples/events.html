@@ -29,11 +29,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <html>
 <head>
   <title>Event Example - Piccolo2d.js</title>
-  <link rel="stylesheet" href="examples.css"/>
+  <link rel="stylesheet" href="../stylesheets/styles.css">
+  <link rel="stylesheet" href="../stylesheets/pygment_trac.css">
 </head>
 <body>
 <div id="container">
-  <a href="index.html">&laquo;Back to Example List</a>
+  <a href="../index.html">&laquo;Back to Main Page</a>
 
   <h1>Events Example</h1>
 
@@ -68,7 +69,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         var b = Math.round(Math.random() * 255);
         layer.addChild(new ZoomNode({
           fillStyle: randomCSSColor(),
-          bounds: new PBounds(0, 0, 100, 100),
+          bounds: new PBounds(0, 0, 100, 100)
         }).scale(0.25).translate(30 * x + 1.25, 30 * y + 1.25));
       }
     }
@@ -80,7 +81,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         var focusBounds = clickedNode.getGlobalFullBounds();
         var inverse = globalTransform.getInverse();
         var targetX = (camera.bounds.width - focusBounds.width / clickedNode.getScale()) / 2;
-        var targetY = (camera.bounds.height - focusBounds.height / clickedNode.getScale()) / 2
+        var targetY = (camera.bounds.height - focusBounds.height / clickedNode.getScale()) / 2;
         inverse.translate(targetX, targetY);
 
         camera.animateViewToTransform(inverse, 500);

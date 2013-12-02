@@ -29,11 +29,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <html>
 <head>
   <title>Hierarchy Example - Piccolo2d.js</title>
-  <link rel="stylesheet" href="examples.css"/>
+  <link rel="stylesheet" href="../stylesheets/styles.css">
+  <link rel="stylesheet" href="../stylesheets/pygment_trac.css">
 </head>
 <body>
 <div id="container">
-  <a href="index.html">&laquo;Back to Examples List</a>
+  <a href="../index.html">&laquo;Back to Main Page</a>
 
   <h1>Hierarchy Example</h1>
 
@@ -87,10 +88,10 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       click: function (event) {
         var clickedNode = event.pickedNodes[0];
         var globalTransform = clickedNode.getGlobalTransform();
-        var focusBounds = clickedNode.getGlobalFullBounds();
         var inverse = globalTransform.getInverse();
 
         $("#cameraScale").text("" + (clickedNode.displayScale || 1));
+
         camera.animateViewToTransform(inverse, 500);
       }
     });

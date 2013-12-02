@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Piccolo2d.js by allain</title>
+    <title>Piccolo2D.js</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/pygment_trac.css">
@@ -15,11 +15,10 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1>Piccolo2d.js</h1>
-        <p>Port of Piccolo2d to JavaScript</p>
+        <h1>Piccolo2D.js</h1>
+        <p>Port of Piccolo2D to the HTML5 environment.</p>
 
         <p class="view"><a href="https://github.com/allain/piccolo2d.js">View the Project on GitHub <small>allain/piccolo2d.js</small></a></p>
-
 
         <ul>
           <li><a href="https://github.com/allain/piccolo2d.js/zipball/master">Download <strong>ZIP File</strong></a></li>
@@ -28,21 +27,67 @@
         </ul>
       </header>
       <section>
-        <h3>
-          <a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages">
-          <span class="octicon octicon-link"></span>
-            
-          </a>
-        </h3>
-        
-        <p>TODO</p>
+        <h1>About</h1>
+
+        <p>Piccolo2D.js is a port of Piccolo2D.java to the HTML5 environment.</p>
+
+        <p>Piccolo2D is a toolkit that supports the development of 2D structured graphics programs, in general, and
+        Zoomable User Interfaces (ZUIs), in particular. A ZUI is a new kind of interface that presents a huge canvas of
+        information on a traditional computer display by letting the user smoothly zoom in, to get more detailed
+        information, and zoom out for an overview. We use a "scene graph" model that is common to 3D environments.
+        Basically, this means that Piccolo2D maintains a hierarchal structure of objects and cameras, allowing the
+        application developer to orient, group and manipulate objects in meaningful ways.</p>
+
+        <p>Why use Piccolo2D? It will allow you to build structured graphical applications without worrying so much about
+        the low level details. The infrastructure provides efficient repainting of the screen, bounds management, event
+        handling and dispatch, picking (determining which visual object the mouse is over), animation, layout, and more.
+        Normally, you would have to write all of this code from scratch. Additionally, if you want to build an
+        application with zooming, that's built right into the framework too.</p>
+      </section>
+      <section>
+        <h1>Examples</h1>
+
+        <dl>
+          <dt><a href="examples/events.html">Events</a></dt>
+          <dd>
+            <p>Demonstrates: Event Handling</p>
+          </dd>
+
+          <dt><a href="examples/activities.html">Activities</a></dt>
+          <dd>
+            <p>Demonstrates: Scheduling Activities</p>
+          </dd>
+
+          <dt><a href="examples/hierarchy.html">Hierarchy</a></dt>
+          <dd>
+            <p>Demonstrates: Very Deeply Nested Nodes</p>
+          </dd>
+
+          <dt><a href="examples/sticky-nodes.html">Sticky Nodes</a></dt>
+          <dd>
+            <p>Demonstrates: activities, sticky nodes</p>
+          </dd>
+
+          <dt><a href="examples/images.html">PImage Example</a></dt>
+          <dd>
+            <p>Demonstrates: creation of PImages</p>
+          </dd>
+
+          <dt><a href="examples/calendar.html">Calendar Example</a></dt>
+          <dd>
+            <p>Example used to benchmark the basic code.</p>
+
+            <p>Demonstrates: events, scene construction</p>
+          </dd>
+        </dl>
+
       </section>
       <footer>
-        <p>This project is maintained by <a href="https://github.com/allain">allain</a></p>
+        <p>Piccolo2d.js is maintained by <a href="https://github.com/allain">allain</a></p>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
-    
+
   </body>
 </html>

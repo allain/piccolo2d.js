@@ -29,11 +29,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <html>
 <head>
   <title>Calendar Example - Piccolo2d.js</title>
-  <link rel="stylesheet" href="examples.css"/>
+  <link rel="stylesheet" href="../stylesheets/styles.css">
+  <link rel="stylesheet" href="../stylesheets/pygment_trac.css">
 </head>
 <body>
 <div id="container">
-  <a href="index.html">&laquo;Back to Examples List</a>
+  <a href="../index.html">&laquo;Back to Main Page</a>
 
   <h1>Calendar Example</h1>
 
@@ -123,8 +124,8 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         this.addChild(new PText(Month.monthNames[month]).scale(2).translate(5, 5));
 
         var dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-        for (var i = 0; i < dayNames.length; i++) {
-          this.addChild(new PText(dayNames[i]).translate(i * columnWidth, 50).scale(0.7));
+        for (var dayIndex = 0; dayIndex < dayNames.length; dayIndex++) {
+          this.addChild(new PText(dayNames[dayIndex]).translate(dayIndex * columnWidth, 50).scale(0.7));
         }
 
         this.firstDay = Date.build(year, month, 1);
@@ -136,8 +137,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         var currentY = 70;
         var currentDay = 0;
 
-        var tasks = ["Woot", "Eat more fish", "Testing 1, 2, 3", "Testing Again", "Kilroy was here"];
-
+        var tasks = ["Get Milk", "Phone Mom", "Call Work", "Run Tests", "Investigate Fridge Humming"];
 
         do {
           var randomTasks = [];
