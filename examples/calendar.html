@@ -221,6 +221,12 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     }
 
     var backButton = new PImage("http://allain.github.io/piccolo2d.js/examples/zoom-out.png");
+    backButton.addListener({
+      'click': function(event) {
+        zoomOut();
+        return true;
+      }
+    });
 
     camera.addChild(backButton);
 
@@ -238,12 +244,14 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
         if (lastFocus !== newFocus) {
           zoomTo(newFocus);
+          return true;
         }
       },
 
       mouseup: function (event) {
         if (event.event.button === 2) {
           zoomOut();
+          return true;
         }
       }
     });
