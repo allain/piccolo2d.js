@@ -756,6 +756,8 @@ window.PCamera = window.PNode.subClass({
       pickedNodes = [],
       layerPoint;
 
+    pickedNodes.pushAll(this._getPickedNodes(this, mousePoint));
+
     for (var i = 0; i < this.layers.length; i += 1) {
       layerPoint = this.layers[i].transform.getInverse().transform(globalPoint);
       pickedNodes.pushAll(this._getPickedNodes(this.layers[i], layerPoint));
@@ -777,7 +779,7 @@ window.PCamera = window.PNode.subClass({
       }
     }
 
-    return (pickedChildren.length === 0) ? [parent] : pickedChildren;
+    return (pickedChildren.length === 0 && !(parent instanceof PCamera)) ? [parent] : pickedChildren;
   },
 
   animateViewToTransform: function (transform, duration) {
@@ -831,10 +833,14 @@ window.PCanvas = Object.subClass({
           for (var i = 0, listenerCount = currentNode.listeners.length; i < listenerCount; i += 1) {
             listener = currentNode.listeners[i];
             if (listener[type]) {
-              listener[type]({
+              var swallowed = listener[type]({
                 "event": event,
                 "pickedNodes": pickedNodes
               });
+
+              if (swallowed) {
+                return;
+              }
             }
           }
           currentNode = currentNode.parent;
