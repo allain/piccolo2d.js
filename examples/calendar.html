@@ -173,77 +173,83 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
       layer.addChild(new Month(year, monthIndex).scale(0.25).translate(monthX, monthY));
     }
 
+    function findUp(node, test) {
+      if (node === null || test(node)) return node;
+
+      return findUp(node.parent, test);
+    }
+
+    function typesTest(types) {
+      return function(node) {
+        for (var i=0; i<types.length; i++) {
+          if (node instanceof types[i]) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+    }
+
+    var lastFocus = null;
+
+    function zoomTo(newFocus) {
+      if (newFocus === null) {
+        newFocus = layer;
+      }
+      lastFocus = newFocus;
+
+      var globalTransform = newFocus.getGlobalTransform();
+      var inverse = globalTransform.getInverse();
+      var focusBounds = (newFocus === layer) ? layer.getFullBounds() : newFocus.getFullBounds();
+
+      inverse.translate((camera.bounds.width - focusBounds.width) / 2, (camera.bounds.height - focusBounds.height) / 2);
+
+
+      camera.animateViewToTransform(inverse, 500);
+    }
+
+    function zoomOut() {
+      var newFocus = findUp(lastFocus.parent, typesTest([Day, Month, PLayer]));
+
+      if (newFocus === null) {
+        newFocus = layer;
+      }
+
+
+      zoomTo(newFocus);
+    }
+
+    /*
+    var backButton = new PText({
+      text: "Back",
+      fillStyle: "rgb(240,240,240)"
+    });
+
+    camera.addChild(backButton);
+    */
 
     layer.addListener({
-      lastFocus: null,
-
       click: function (event) {
         var newFocus;
 
         newFocus = event.pickedNodes[0];
-        if (this.lastFocus == null || this.lastFocus instanceof PLayer) {
-          while (newFocus && !(newFocus instanceof Month)) {
-            newFocus = newFocus.parent;
-          }
+
+        if (lastFocus == null || lastFocus instanceof PLayer) {
+          newFocus = findUp(newFocus, typesTest([Month]));
+        } else {
+          newFocus = findUp(newFocus, typesTest([Day, Month]));
         }
 
-        while (newFocus != null) {
-          if (newFocus instanceof Day) {
-            break;
-          } else if (newFocus instanceof Month) {
-            break;
-          }
-          newFocus = newFocus.parent;
-        }
-
-        if (this.lastFocus !== newFocus) {
-          if (newFocus === null) {
-            newFocus = layer;
-          }
-          this.lastFocus = newFocus;
-
-          var globalTransform = newFocus.getGlobalTransform();
-          var inverse = globalTransform.getInverse();
-          var focusBounds = (newFocus === layer) ? layer.getFullBounds() : newFocus.getFullBounds();
-
-          inverse.translate((camera.bounds.width - focusBounds.width) / 2, (camera.bounds.height - focusBounds.height) / 2);
-
-
-          camera.animateViewToTransform(inverse, 500);
+        if (lastFocus !== newFocus) {
+          zoomTo(newFocus);
         }
       },
 
       mouseup: function (event) {
         if (event.event.button === 2) {
-          var newFocus = this.logicalParentOf(this.lastFocus);
-
-          if (newFocus === null) {
-            newFocus = layer;
-          }
-
-
-          this.lastFocus = newFocus;
-          var globalTransform = newFocus.getGlobalTransform();
-          var inverse = globalTransform.getInverse();
-          var focusBounds = (newFocus === layer) ? layer.getFullBounds() : newFocus.getFullBounds();
-
-          inverse.translate((camera.bounds.width - focusBounds.width) / 2, (camera.bounds.height - focusBounds.height) / 2);
-
-
-          camera.animateViewToTransform(inverse, 500);
+          zoomOut();
         }
-      },
-
-      logicalParentOf: function (node) {
-        if (node instanceof PLayer) {
-          return node;
-        }
-
-        do {
-          node = node.parent;
-        } while (!(node instanceof Month || node instanceof PLayer));
-
-        return node;
       }
     });
   </script>
